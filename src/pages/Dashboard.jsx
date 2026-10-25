@@ -12,11 +12,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Thermometer,
-  Megaphone,
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import { getCurrentMonthYear } from "../utils/dateUtils";
+import Pengumuman from "./Pengumuman";
 
 // Menu grid items
 const menuItems = [
@@ -61,13 +61,6 @@ const menuItems = [
     icon: FileText,
     path: "/riwayat-kegiatan",
     color: "bg-rose-50 text-rose-600",
-  },
-  {
-    id: "pengumuman",
-    label: "Pengumuman",
-    icon: Megaphone,
-    path: "/pengumuman",
-    color: "bg-orange-50 text-orange-600",
   },
 ];
 
@@ -187,60 +180,58 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Statistik Kehadiran */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-700">
-                Informasi
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Statistik Kehadiran ({getCurrentMonthYear()})
-              </p>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-3 flex flex-col gap-3 ">
+          {/* Statistik Kehadiran */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col items-center justify-center">
+            <div className="flex items-center justify-between mb-4">
+                <p className="text-lg text-slate-700 flex m-auto font-bold">
+                  Statistik Kehadiran ({getCurrentMonthYear()})
+                </p>
             </div>
-          </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="bg-emerald-50 rounded-xl p-3 text-center">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-slate-900">
-                {monthlyStats.hadir}
-              </p>
-              <p className="text-[10px] text-slate-500">Hadir</p>
+            <div className="grid grid-cols-3 gap-3 mb-4 w-full">
+              <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-slate-900">
+                  {monthlyStats.hadir}
+                </p>
+                <p className="text-[10px] text-slate-500">Hadir</p>
+              </div>
+              <div className="bg-amber-50 rounded-xl p-3 text-center">
+                <AlertCircle className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-slate-900">
+                  {monthlyStats.izin}
+                </p>
+                <p className="text-[10px] text-slate-500">Izin</p>
+              </div>
+              <div className="bg-rose-50 rounded-xl p-3 text-center">
+                <Thermometer className="w-5 h-5 text-rose-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-slate-900">
+                  {monthlyStats.sakit}
+                </p>
+                <p className="text-[10px] text-slate-500">Sakit</p>
+              </div>
             </div>
-            <div className="bg-amber-50 rounded-xl p-3 text-center">
-              <AlertCircle className="w-5 h-5 text-amber-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-slate-900">
-                {monthlyStats.izin}
-              </p>
-              <p className="text-[10px] text-slate-500">Izin</p>
-            </div>
-            <div className="bg-rose-50 rounded-xl p-3 text-center">
-              <Thermometer className="w-5 h-5 text-rose-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-slate-900">
-                {monthlyStats.sakit}
-              </p>
-              <p className="text-[10px] text-slate-500">Sakit</p>
-            </div>
-          </div>
 
-          {/* Progress Bar */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-slate-600 font-medium">
-                Tingkat Kehadiran
-              </span>
-              <span className="text-xs font-bold text-primary-600">
-                {attendancePercentage}%
-              </span>
-            </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all"
-                style={{ width: `${attendancePercentage}%` }}
-              ></div>
+            {/* Progress Bar */}
+            <div className="w-full">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs text-slate-600 font-medium">
+                  Tingkat Kehadiran
+                </span>
+                <span className="text-xs font-bold text-primary-600">
+                  {attendancePercentage}%
+                </span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all"
+                  style={{ width: `${attendancePercentage}%` }}
+                ></div>
+              </div>
             </div>
           </div>
+          <Pengumuman />
         </div>
       </div>
     </DashboardLayout>

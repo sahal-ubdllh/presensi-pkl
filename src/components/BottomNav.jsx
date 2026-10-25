@@ -1,10 +1,9 @@
 import { NavLink } from "react-router-dom";
-import { Home, MapPin, FileText, User, Megaphone } from "lucide-react";
+import { Home, MapPin, FileText, User } from "lucide-react";
 
 const navItems = [
   { path: "/", icon: Home, label: "Beranda" },
   { path: "/presensi", icon: MapPin, label: "Presensi" },
-  { path: "/pengumuman", icon: Megaphone, label: "Info" },
   { path: "/kegiatan", icon: FileText, label: "Kegiatan" },
   { path: "/profil", icon: User, label: "Profil" },
 ];

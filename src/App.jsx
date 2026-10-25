@@ -13,7 +13,7 @@ import RiwayatKegiatan from "./pages/RiwayatKegiatan";
 import DetailKegiatan from "./pages/DetailKegiatan";
 import Profil from "./pages/Profil";
 import EditProfil from "./pages/EditProfil";
-import Pengumuman from "./pages/Pengumunan";
+import Pengumuman from "./pages/Pengumuman";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();

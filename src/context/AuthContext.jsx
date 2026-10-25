@@ -69,47 +69,55 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
+  let isMounted = true; // Flag untuk track component mount
+
+  const checkSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user && isMounted) {
+        setUser(session.user);
+        await fetchProfile(session.user.id);
+      } else if (isMounted) {
         setUser(null);
         setProfile(null);
-      } finally {
+      }
+    } catch (error) {
+      console.error('Error checking session:', error);
+      if (isMounted) {
+        setUser(null);
+        setProfile(null);
+      }
+    } finally {
+      if (isMounted) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    checkSession();
+  checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth event:', event, session?.user?.email);
-        
-        if (session?.user) {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      // Hanya handle event tertentu
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user && isMounted) {
           setUser(session.user);
           await fetchProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
         }
+      } else if (event === 'SIGNED_OUT' && isMounted) {
+        setUser(null);
+        setProfile(null);
         setLoading(false);
       }
-    );
+    }
+  );
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  return () => {
+    isMounted = false; // Cleanup
+    subscription.unsubscribe();
+  };
+}, []); // Empty dependency array
 
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
