@@ -133,12 +133,19 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  };
+
   const value = {
     user,
     profile,
     loading,
     login,
     logout,
+    refreshProfile,
   };
 
   return (

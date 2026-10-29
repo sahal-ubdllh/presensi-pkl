@@ -139,6 +139,10 @@ export default function Presensi() {
       toast.error("Anda berada di luar radius kantor!");
       return;
     }
+    if (!isInRadius && jenis === "pulang") {
+      toast.error("Anda berada di luar radius kantor!");
+      return;
+    }
 
     try {
       const { error } = await supabase.from("presensi").insert([
