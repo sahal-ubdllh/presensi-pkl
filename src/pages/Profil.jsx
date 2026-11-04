@@ -20,10 +20,18 @@ export default function Profil() {
     }
   };
 
+  // Jenis peserta & asal instansi hanya relevan untuk peserta PKL
+  const isPeserta = profile?.role === 'peserta';
+  const roleLabel = { admin: 'Admin', pembimbing: 'Pembimbing' }[profile?.role];
+
   const menuItems = [
     { label: 'Nama Lengkap', value: profile?.nama_lengkap || '-', icon: User },
-    { label: 'Jenis Peserta', value: profile?.jenis_peserta || '-', icon: Briefcase },
-    { label: 'Asal Instansi', value: profile?.asal_instansi || '-', icon: Building2 },
+    ...(isPeserta
+      ? [
+          { label: 'Jenis Peserta', value: profile?.jenis_peserta || '-', icon: Briefcase },
+          { label: 'Asal Instansi', value: profile?.asal_instansi || '-', icon: Building2 },
+        ]
+      : []),
     { label: 'Email', value: profile?.email || '-', icon: Mail },
     { label: 'No. Telepon', value: profile?.no_telepon || '-', icon: Phone },
   ];
@@ -51,7 +59,7 @@ export default function Profil() {
             )}
           </div>
           <h2 className="text-lg font-bold text-slate-900">{profile?.nama_lengkap || 'Peserta PKL'}</h2>
-          <p className="text-sm text-slate-500">{profile?.jenis_peserta || 'Peserta'}</p>
+          <p className="text-sm text-slate-500">{isPeserta ? profile?.jenis_peserta || 'Peserta' : roleLabel || '-'}</p>
         </div>
 
         {/* Info List Card */}

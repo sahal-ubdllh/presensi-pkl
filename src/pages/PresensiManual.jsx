@@ -58,24 +58,20 @@ export default function PresensiManual() {
       }
 
       // Insert data ke tabel presensi
-      const { error: dbError } = await supabase.from("presensi").insert([
-        {
-          user_id: profile.id,
-          tanggal: formData.tanggal,
-          jenis: formData.jenis,
-          metode: "manual",
-          alasan: formData.alasan,
-          bukti_file: buktiUrl,
-          status: "hadir", // Atau 'menunggu' jika butuh approval
-        },
-      ]);
+      // Validasi tanggal & penyimpanan dilakukan di server (fungsi catat_presensi_manual)
+      const { error: dbError } = await supabase.rpc("catat_presensi_manual", {
+        p_tanggal: formData.tanggal,
+        p_jenis: formData.jenis,
+        p_alasan: formData.alasan,
+        p_bukti_file: buktiUrl,
+      });
 
       if (dbError) {
         console.error("DB error:", dbError);
         throw dbError;
       }
 
-      toast.success("Presensi manual berhasil dikirim!");
+      toast.success("Presensi manual terkirim, menunggu persetujuan pembimbing.");
       navigate("/riwayat-presensi");
     } catch (error) {
       console.error("Submit error:", error);

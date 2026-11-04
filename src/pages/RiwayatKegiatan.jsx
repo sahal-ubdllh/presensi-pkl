@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, FileText } from "lucide-react";
+import { ArrowLeft, ChevronRight, FileText, Download } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { formatDate } from "../utils/dateUtils";
+import { downloadKegiatanPdf } from "../utils/pdfExport";
 import toast from "react-hot-toast";
 
 export default function RiwayatKegiatan() {
@@ -34,6 +35,21 @@ export default function RiwayatKegiatan() {
     if (profile) fetchKegiatan();
   }, [profile]);
 
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await downloadKegiatanPdf(profile, kegiatan);
+      toast.success("PDF berhasil dibuat");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Gagal membuat PDF");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const styles = {
       disetujui: "bg-emerald-50 text-emerald-600",
@@ -63,6 +79,14 @@ export default function RiwayatKegiatan() {
         <h1 className="text-lg font-semibold text-slate-900">
           Riwayat Kegiatan
         </h1>
+        <button
+          onClick={handleDownload}
+          disabled={downloading || loading || kegiatan.length === 0}
+          className="ml-auto flex items-center gap-1.5 bg-primary-600 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download className="w-4 h-4" />
+          {downloading ? "Menyiapkan..." : "PDF"}
+        </button>
       </header>
 
       <div className="p-5">

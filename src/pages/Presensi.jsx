@@ -145,18 +145,12 @@ export default function Presensi() {
     }
 
     try {
-      const { error } = await supabase.from("presensi").insert([
-        {
-          user_id: profile.id,
-          tanggal: getTodayString(),
-          jenis,
-          metode: "otomatis",
-          lokasi_lat: userLocation[0],
-          lokasi_lng: userLocation[1],
-          dalam_radius: isInRadius,
-          status: "hadir",
-        },
-      ]);
+      // Radius, tanggal, dan status dihitung di server (fungsi catat_presensi)
+      const { error } = await supabase.rpc("catat_presensi", {
+        p_jenis: jenis,
+        p_lat: userLocation[0],
+        p_lng: userLocation[1],
+      });
 
       if (error) throw error;
 

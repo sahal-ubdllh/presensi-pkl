@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -14,6 +14,10 @@ import DetailKegiatan from "./pages/DetailKegiatan";
 import Profil from "./pages/Profil";
 import EditProfil from "./pages/EditProfil";
 import Pengumuman from "./pages/Pengumuman";
+import DashboardPembimbing from "./pages/DashboardPembimbing";
+import ManageUsers from "./pages/ManageUsers";
+import StatistikPeserta from "./pages/StatistikPeserta";
+import DashboardAdmin from "./pages/DashboardAdmin";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -21,72 +25,122 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Route yang hanya boleh diakses jika role cocok
+const RoleProtectedRoute = ({ children, allowedRoles }) => {
+  const { profile, loading } = useAuth();
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500">
+        Memuat...
+      </div>
+    );
+
+  if (!profile || !allowedRoles.includes(profile.role)) {
+    toast.error("Akses ditolak. Anda tidak memiliki izin.");
+    // Redirect ke home yang sesuai role
+    const roleHome =
+      profile?.role === "admin"
+        ? "/dashboard-admin"
+        : profile?.role === "pembimbing"
+          ? "/dashboard-pembimbing"
+          : "/login";
+    return <Navigate to={roleHome} replace />;
+  }
+  return children;
+};
+
+// Redirect halaman utama berdasarkan role
+const HomeRedirect = () => {
+  const { profile, loading } = useAuth();
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500">
+        Memuat...
+      </div>
+    );
+
+  if (!profile) return <Navigate to="/login" replace />;
+
+  if (profile.role === "admin")
+    return <Navigate to="/dashboard-admin" replace />;
+  if (profile.role === "pembimbing")
+    return <Navigate to="/dashboard-pembimbing" replace />;
+
+  // Peserta → tampilkan Dashboard biasa
+  return <Dashboard />;
+};
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
+      {/* Halaman utama — redirect otomatis berdasarkan role */}
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <HomeRedirect />
           </ProtectedRoute>
         }
       />
+
+      {/* Route khusus PESERTA */}
       <Route
         path="/presensi"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["peserta"]}>
             <Presensi />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/presensi-manual"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["peserta"]}>
             <PresensiManual />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/riwayat-presensi"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["peserta"]}>
             <RiwayatPresensi />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/kegiatan"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["peserta"]}>
             <Kegiatan />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/logbook"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["peserta"]}>
             <LogbookKegiatan />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/draft-kegiatan"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["peserta"]}>
             <DraftKegiatan />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/riwayat-kegiatan"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["peserta"]}>
             <RiwayatKegiatan />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
@@ -119,6 +173,38 @@ function AppRoutes() {
           <ProtectedRoute>
             <Pengumuman />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard-pembimbing"
+        element={
+          <RoleProtectedRoute allowedRoles={["pembimbing", "admin"]}>
+            <DashboardPembimbing />
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard-admin"
+        element={
+          <RoleProtectedRoute allowedRoles={["admin"]}>
+            <DashboardAdmin />
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/statistik-peserta"
+        element={
+          <RoleProtectedRoute allowedRoles={["pembimbing", "admin"]}>
+            <StatistikPeserta />
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manage-users"
+        element={
+          <RoleProtectedRoute allowedRoles={["admin"]}>
+            <ManageUsers />
+          </RoleProtectedRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

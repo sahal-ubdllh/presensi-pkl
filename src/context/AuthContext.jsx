@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
         // Jika user tidak ada di public.users, buat otomatis
         if (error.code === 'PGRST116' || error.status === 406) {
           console.log('User not found, creating profile...');
-          const { data: { user: authUser } } = await supabase.auth.getUser(userId);
+          const { data: { user: authUser } } = await supabase.auth.getUser();
           
           if (authUser) {
             const { data: newProfile, error: insertError } = await supabase
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
                   id: userId,
                   nama_lengkap: authUser.user_metadata?.nama_lengkap || authUser.email,
                   email: authUser.email,
-                  role: authUser.user_metadata?.role || 'peserta',
+                  role: 'peserta', // role tidak pernah diambil dari metadata
                   jenis_peserta: authUser.user_metadata?.jenis_peserta || 'Mahasiswa',
                 }
               ])

@@ -9,6 +9,8 @@ import toast from "react-hot-toast";
 export default function EditProfil() {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  // Jenis peserta & asal instansi hanya untuk peserta PKL (bukan pembimbing/admin)
+  const isPeserta = profile?.role === "peserta";
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const isFirstRender = useRef(true);
@@ -89,9 +91,12 @@ export default function EditProfil() {
     setLoading(true);
 
     try {
+      const payload = isPeserta
+        ? formData
+        : { nama_lengkap: formData.nama_lengkap, no_telepon: formData.no_telepon };
       const { error } = await supabase
         .from("users")
-        .update(formData)
+        .update(payload)
         .eq("id", profile.id);
 
       if (error) throw error;
@@ -182,6 +187,8 @@ export default function EditProfil() {
             />
           </div>
 
+          {isPeserta && (
+            <>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-700 ml-1">
               Jenis Peserta
@@ -212,6 +219,9 @@ export default function EditProfil() {
               required
             />
           </div>
+
+            </>
+          )}
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-700 ml-1">
