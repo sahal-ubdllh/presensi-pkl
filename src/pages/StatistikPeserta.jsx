@@ -48,13 +48,15 @@ export default function StatistikPeserta() {
             .eq("role", "peserta")
             .order("nama_lengkap"),
         ),
+        // Seluruh riwayat sampai akhir bulan: dibutuhkan untuk mengetahui presensi pertama tiap peserta
         fetchAll(() =>
           supabase
             .from("presensi")
             .select("user_id, tanggal, status")
             .eq("jenis", "masuk")
-            .gte("tanggal", awal)
-            .lte("tanggal", akhir),
+            .lte("tanggal", akhir)
+            .order("tanggal", { ascending: true })
+            .order("user_id", { ascending: true }),
         ),
         fetchAll(() =>
           supabase
@@ -133,8 +135,8 @@ export default function StatistikPeserta() {
             <Ringkas ikon={FileText} nilai={data.ringkasan.kegiatanMenunggu} label="Kegiatan menunggu" kelas="bg-amber-50 text-amber-600" />
           </div>
           <p className="text-xs text-slate-400 mt-2">
-            Dihitung dari {data.hariKerja} hari kerja (Senin-Jumat, libur nasional tidak dikurangi).
-            Presensi manual yang belum disetujui belum dihitung hadir.
+            Hari kerja (Senin-Jumat) dihitung sejak presensi pertama tiap peserta; libur nasional
+            tidak dikurangi. Presensi manual yang belum disetujui belum dihitung hadir.
           </p>
 
           {/* Cari & urut */}
@@ -176,12 +178,27 @@ export default function StatistikPeserta() {
                           {[p.jenis_peserta, p.asal_instansi].filter(Boolean).join(" • ") || "-"}
                         </p>
                       </div>
-                      <span className={`text-lg font-bold ${w.teks}`}>{p.persen}%</span>
+                      {p.belumMulai ? (
+                        <span className="text-xs font-medium text-slate-400 bg-slate-100 rounded-full px-2.5 py-1 whitespace-nowrap">
+                          Belum mulai
+                        </span>
+                      ) : (
+                        <span className={`text-lg font-bold ${w.teks}`}>{p.persen}%</span>
+                      )}
                     </div>
 
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden mt-3">
                       <div className={`h-full rounded-full ${w.bar}`} style={{ width: `${p.persen}%` }} />
                     </div>
+                    <p className="text-[11px] text-slate-400 mt-1.5">
+                      {p.mulai
+                        ? `Mulai presensi ${format(new Date(p.mulai), "dd MMM yyyy", { locale: localeId })}${
+                            p.belumMulai
+                              ? " (setelah bulan ini)"
+                              : ` • ${p.hariKerja} hari kerja${p.terlambat > 0 ? ` • ${p.terlambat}x terlambat` : ""}`
+                          }`
+                        : "Belum pernah presensi"}
+                    </p>
 
                     <div className="grid grid-cols-4 gap-2 mt-3 text-center">
                       <Mini nilai={p.hadir} label="Hadir" kelas="text-emerald-600" />

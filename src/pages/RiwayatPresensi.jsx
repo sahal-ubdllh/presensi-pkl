@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   AlertCircle,
+  Clock,
   Download,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -72,6 +73,8 @@ export default function RiwayatPresensi() {
   const getStatusIcon = (metode, dalam_radius, statusPresensi) => {
     if (statusPresensi === "ditolak")
       return <AlertCircle className="w-4 h-4 text-rose-500" />;
+    if (statusPresensi === "terlambat")
+      return <Clock className="w-4 h-4 text-amber-500" />;
     if (metode === "manual")
       return <AlertCircle className="w-4 h-4 text-amber-500" />;
     if (dalam_radius)
@@ -87,6 +90,8 @@ export default function RiwayatPresensi() {
       };
     if (statusPresensi === "ditolak")
       return { text: "Ditolak", color: "text-rose-600 bg-rose-50" };
+    if (statusPresensi === "terlambat")
+      return { text: "Terlambat", color: "text-amber-600 bg-amber-50" };
     if (metode === "manual")
       return { text: "Manual", color: "text-amber-600 bg-amber-50" };
     if (dalam_radius)

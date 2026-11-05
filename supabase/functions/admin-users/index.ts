@@ -102,5 +102,23 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
+  // ---------- RESET PASSWORD ----------
+  if (payload.action === "reset_password") {
+    const id = String(payload.id ?? "");
+    const password = String(payload.password ?? "");
+    if (!id) return json({ error: "id wajib" }, 400);
+    if (password.length < 6) return json({ error: "Password minimal 6 karakter" }, 400);
+
+    const { data: target } = await admin
+      .from("users").select("role").eq("id", id).single();
+    if (!target || target.role === "deleted") {
+      return json({ error: "User tidak ditemukan atau sudah dinonaktifkan" }, 404);
+    }
+
+    const { error } = await admin.auth.admin.updateUserById(id, { password });
+    if (error) return json({ error: error.message }, 400);
+    return json({ ok: true });
+  }
+
   return json({ error: "action tidak dikenal" }, 400);
 });

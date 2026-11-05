@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Eye, EyeOff, Building2 } from 'lucide-react';
+import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import ContactAdminModal from '../components/ContactAdminModal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,8 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
+  const [remember, setRemember] = useState(true);
+  const [kontak, setKontak] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -18,7 +21,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, remember);
       toast.success('Selamat datang kembali!');
       navigate('/'); 
     } catch (error) {
@@ -29,12 +32,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-white">
+    <div className="min-h-screen flex flex-col justify-between bg-primary-50">
       {/* Top Section: Branding & Logo */}
-      <div className="flex-1 flex flex-col items-center justify-center pt-16 pb-8 px-6">
+      <div className="flex-1 flex flex-col items-center justify-center pt-16 pb-8 px-6 bg-gradient-to-b from-primary-500 to-primary-50">
         {/* Logo Icon */}
-        <div className="w-20 h-20 bg-primary-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-          <Building2 className="w-10 h-10 text-primary-600" />
+        <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6">
+          <img src="../../public/logo-dinsos.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
         
         {/* Title */}
@@ -47,7 +50,7 @@ export default function Login() {
       </div>
 
       {/* Bottom Section: Form Card */}
-      <div className="bg-slate-50 rounded-t-3xl px-6 pt-8 pb-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+      <div className="bg-white rounded-t-3xl px-6 pt-8 pb-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
         <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
           
           {/* Email Input */}
@@ -70,7 +73,7 @@ export default function Login() {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center ml-1">
               <label className="text-sm font-medium text-slate-700">Password</label>
-              <button type="button" className="text-xs font-medium text-primary-600 hover:text-primary-700">
+              <button type="button" className="text-xs font-medium text-primary-600 hover:text-primary-700" onClick={() => setKontak('password')}>
                 Lupa password?
               </button>
             </div>
@@ -98,7 +101,9 @@ export default function Login() {
           <div className="flex items-center gap-2 pt-1">
             <input 
               type="checkbox" 
-              id="remember" 
+              id="remember"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)} 
               className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" 
             />
             <label htmlFor="remember" className="text-sm text-slate-600">Ingat saya di perangkat ini</label>
@@ -122,12 +127,13 @@ export default function Login() {
         <div className="mt-8 text-center">
           <p className="text-sm text-slate-500">
             Belum punya akun?{' '}
-            <button className="text-primary-600 font-semibold hover:text-primary-700">
+            <button type="button" onClick={() => setKontak('akun')} className="text-primary-600 font-semibold hover:text-primary-700">
               Hubungi Admin
             </button>
           </p>
         </div>
       </div>
+      <ContactAdminModal jenis={kontak} email={email} onClose={() => setKontak(null)} />
     </div>
   );
 }

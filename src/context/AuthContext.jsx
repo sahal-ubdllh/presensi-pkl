@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, setRemember } from '../lib/supabase';
 
 const AuthContext = createContext();
 
@@ -119,7 +119,8 @@ export const AuthProvider = ({ children }) => {
   };
 }, []); // Empty dependency array
 
-  const login = async (email, password) => {
+  const login = async (email, password, remember = true) => {
+    setRemember(remember); // harus ditetapkan SEBELUM sesi dibuat
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,

@@ -44,7 +44,7 @@ export default function DashboardPembimbing() {
         .select("*", { count: "exact", head: true })
         .eq("tanggal", today)
         .eq("jenis", "masuk")
-        .eq("status", "hadir");
+        .in("status", ["hadir", "terlambat"]);
 
       // 2b. Presensi manual yang menunggu persetujuan
       const { data: presensiRows, error: presensiErr } = await supabase

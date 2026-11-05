@@ -18,6 +18,7 @@ import DashboardLayout from "../components/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import { getCurrentMonthYear, getTodayString } from "../utils/dateUtils";
 import { supabase } from "../lib/supabase";
+import { rentangBulan, hitungHariKerja, parseTanggal } from "../utils/statistikPeserta";
 import Pengumuman from "./Pengumuman";
 import toast from "react-hot-toast";
 
@@ -80,6 +81,7 @@ export default function Dashboard() {
     hadir: 0,
     izin: 0,
     sakit: 0,
+    terlambat: 0,
     totalHariKerja: 0,
   });
 
@@ -125,13 +127,13 @@ export default function Dashboard() {
       });
 
       // ── 2. Statistik bulan ini ──────────────────────────────────────
+      // Aturan sama dengan halaman Statistik pembimbing: hari kerja dihitung sejak
+      // presensi pertama peserta sampai hari ini (bukan sebulan penuh).
       const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        .toISOString()
-        .split("T")[0];
+      const { awal: firstDay, akhir: lastDay } = rentangBulan(
+        now.getFullYear(),
+        now.getMonth(),
+      );
 
       const { data: monthRows, error: monthErr } = await supabase
         .from("presensi")
@@ -143,31 +145,40 @@ export default function Dashboard() {
 
       if (monthErr) throw monthErr;
 
-      // Hitung unik per tanggal
-      const uniqueDays = [
-        ...new Set(
-          monthRows?.filter((r) => r.status === "hadir").map((r) => r.tanggal) ||
-            [],
-        ),
-      ];
-      const hadir = monthRows?.filter((r) => r.status === "hadir").length || 0;
-      const izin = monthRows?.filter((r) => r.status === "izin").length || 0;
-      const sakit = monthRows?.filter((r) => r.status === "sakit").length || 0;
+      // Presensi pertama sepanjang riwayat (hadir/izin/sakit)
+      const { data: firstRows, error: firstErr } = await supabase
+        .from("presensi")
+        .select("tanggal")
+        .eq("user_id", profile.id)
+        .eq("jenis", "masuk")
+        .in("status", ["hadir", "terlambat", "izin", "sakit"])
+        .order("tanggal", { ascending: true })
+        .limit(1);
 
-      // Hitung hari kerja bulan ini (Senin–Jumat)
-      let hariKerja = 0;
-      const cursor = new Date(firstDay);
-      const last = new Date(lastDay);
-      while (cursor <= last) {
-        const day = cursor.getDay();
-        if (day !== 0 && day !== 6) hariKerja++;
-        cursor.setDate(cursor.getDate() + 1);
-      }
+      if (firstErr) throw firstErr;
+      const mulai = firstRows?.[0]?.tanggal || null;
+
+      // Hitung hari unik per status
+      const hariUnik = (status) =>
+        new Set(
+          monthRows?.filter((r) => r.status === status).map((r) => r.tanggal) ||
+            [],
+        ).size;
+      // "terlambat" tetap dihitung hadir, hanya dicatat terpisah
+      const terlambat = hariUnik("terlambat");
+      const hadir = hariUnik("hadir") + terlambat;
+      const izin = hariUnik("izin");
+      const sakit = hariUnik("sakit");
+
+      const hariKerja = mulai
+        ? hitungHariKerja(now.getFullYear(), now.getMonth(), now, parseTanggal(mulai))
+        : 0;
 
       setMonthlyStats({
-        hadir: uniqueDays.length,
+        hadir,
         izin,
         sakit,
+        terlambat,
         totalHariKerja: hariKerja,
         rawHadir: hadir,
       });
@@ -356,6 +367,8 @@ export default function Dashboard() {
               <p className="text-[10px] text-slate-400 mt-1">
                 {monthlyStats.hadir} dari {monthlyStats.totalHariKerja} hari
                 kerja
+                {monthlyStats.terlambat > 0 &&
+                  ` • ${monthlyStats.terlambat}x terlambat`}
               </p>
             </div>
           </div>

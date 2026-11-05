@@ -81,7 +81,7 @@ export default function DashboardAdmin() {
             .select("*", { count: "exact", head: true })
             .eq("tanggal", getTodayString())
             .eq("jenis", "masuk")
-            .eq("status", "hadir"),
+            .in("status", ["hadir", "terlambat"]),
           supabase
             .from("kegiatan")
             .select("*", { count: "exact", head: true })

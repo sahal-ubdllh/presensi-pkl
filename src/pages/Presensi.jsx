@@ -43,6 +43,13 @@ export default function Presensi() {
     masuk: false,
     pulang: false,
   });
+  const [masukStatus, setMasukStatus] = useState(null); // 'hadir' | 'terlambat'
+  // Jam presensi (dibaca dari tabel konfigurasi; nilai bawaan bila belum diatur)
+  const [jam, setJam] = useState({
+    masukBatas: "07:30",
+    pulangMulai: "15:45",
+    pulangBatas: "16:00",
+  });
 
   // ✅ Pindahkan loadData ke dalam useEffect atau gunakan useCallback
   useEffect(() => {
@@ -75,11 +82,19 @@ export default function Presensi() {
         setOfficeLocation([officeLat, officeLng]);
         setRadius(radiusVal);
 
+        const hhmm = (v, bawaan) =>
+          /^\d{1,2}:\d{2}/.test(String(v || "")) ? String(v).slice(0, 5) : bawaan;
+        setJam({
+          masukBatas: hhmm(configObj.jam_masuk_batas, "07:30"),
+          pulangMulai: hhmm(configObj.jam_pulang_mulai, "15:45"),
+          pulangBatas: hhmm(configObj.jam_pulang_batas, "16:00"),
+        });
+
         // 2. Cek presensi hari ini
         const today = getTodayString();
         const { data: presensiHariIni, error: presensiError } = await supabase
           .from("presensi")
-          .select("jenis")
+          .select("jenis, status")
           .eq("user_id", profile.id)
           .eq("tanggal", today);
 
@@ -88,6 +103,8 @@ export default function Presensi() {
         const masuk = presensiHariIni.some((p) => p.jenis === "masuk");
         const pulang = presensiHariIni.some((p) => p.jenis === "pulang");
         setTodayPresensi({ masuk, pulang });
+        const barisMasuk = presensiHariIni.find((p) => p.jenis === "masuk");
+        setMasukStatus(barisMasuk?.status || null);
 
         // 3. Minta lokasi user
         if (navigator.geolocation) {
@@ -146,7 +163,7 @@ export default function Presensi() {
 
     try {
       // Radius, tanggal, dan status dihitung di server (fungsi catat_presensi)
-      const { error } = await supabase.rpc("catat_presensi", {
+      const { data, error } = await supabase.rpc("catat_presensi", {
         p_jenis: jenis,
         p_lat: userLocation[0],
         p_lng: userLocation[1],
@@ -154,7 +171,15 @@ export default function Presensi() {
 
       if (error) throw error;
 
-      toast.success(`Presensi ${jenis} berhasil!`);
+      if (jenis === "masuk" && data?.status === "terlambat") {
+        toast(`Presensi masuk tercatat pukul ${data.jam}: TERLAMBAT`, {
+          icon: "⏰",
+          duration: 5000,
+        });
+      } else {
+        toast.success(`Presensi ${jenis} berhasil!`);
+      }
+      if (jenis === "masuk") setMasukStatus(data?.status || "hadir");
       setTodayPresensi((prev) => ({ ...prev, [jenis]: true }));
     } catch (error) {
       toast.error(error.message || "Gagal melakukan presensi");
@@ -247,12 +272,26 @@ export default function Presensi() {
           </div>
         )}
 
+        {/* Jam presensi */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm text-sm text-slate-600 space-y-1">
+          <p className="font-semibold text-slate-900 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary-600" /> Jam Presensi
+          </p>
+          <p>
+            Masuk: tepat waktu sampai {jam.masukBatas}, lewat dari itu tercatat{" "}
+            <span className="font-medium text-amber-600">Terlambat</span>
+          </p>
+          <p>
+            Pulang: pukul {jam.pulangMulai} - {jam.pulangBatas}
+          </p>
+        </div>
+
         {/* Tombol Presensi */}
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => handlePresensi("masuk")}
             disabled={todayPresensi.masuk || !userLocation}
-            className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all ${
+            className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all ${
               todayPresensi.masuk
                 ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
                 : "bg-white border border-slate-200 text-slate-700 hover:border-primary-500 hover:text-primary-600 shadow-sm"
@@ -270,6 +309,22 @@ export default function Presensi() {
             <span className="font-semibold text-sm">
               {todayPresensi.masuk ? "Sudah Masuk" : "Presensi Masuk"}
             </span>
+            {/* Baris keterangan: selalu ada di kedua kartu agar tinggi & posisi ikon sejajar */}
+            <span
+              className={`text-[11px] font-medium min-h-4 ${
+                todayPresensi.masuk && masukStatus === "terlambat"
+                  ? "text-amber-600"
+                  : todayPresensi.masuk
+                    ? "text-emerald-700"
+                    : "text-slate-400"
+              }`}
+            >
+              {todayPresensi.masuk
+                ? masukStatus === "terlambat"
+                  ? "Terlambat"
+                  : "Tepat waktu"
+                : `Batas ${jam.masukBatas}`}
+            </span>
           </button>
 
           <button
@@ -277,7 +332,7 @@ export default function Presensi() {
             disabled={
               todayPresensi.pulang || !todayPresensi.masuk || !userLocation
             }
-            className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all ${
+            className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all ${
               todayPresensi.pulang
                 ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
                 : "bg-white border border-slate-200 text-slate-700 hover:border-primary-500 hover:text-primary-600 shadow-sm"
@@ -294,6 +349,15 @@ export default function Presensi() {
             </div>
             <span className="font-semibold text-sm">
               {todayPresensi.pulang ? "Sudah Pulang" : "Presensi Pulang"}
+            </span>
+            <span
+              className={`text-[11px] font-medium min-h-4 ${
+                todayPresensi.pulang ? "text-emerald-700" : "text-slate-400"
+              }`}
+            >
+              {todayPresensi.pulang
+                ? "Tercatat"
+                : `${jam.pulangMulai} - ${jam.pulangBatas}`}
             </span>
           </button>
         </div>
