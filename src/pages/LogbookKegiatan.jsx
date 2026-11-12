@@ -1,11 +1,19 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Upload, Save, X } from "lucide-react";
+import { Send, Upload, Save, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { getTodayString } from "../utils/dateUtils";
 import toast from "react-hot-toast";
+import PageShell, { DaftarLangkah } from "../components/PageShell";
+import { FONT, TINTA, INPUT_CLS } from "../utils/tema";
+
+const LANGKAH = [
+  ["01", "Tulis uraian kegiatan"],
+  ["02", "Lampirkan bukti bila ada"],
+  ["03", "Simpan sebagai draft atau kirim"],
+];
 
 export default function LogbookKegiatan() {
   const { profile } = useAuth();
@@ -81,61 +89,54 @@ export default function LogbookKegiatan() {
     }
   };
 
-  // ✅ Loading screen jika profile belum ada
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div
+        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        style={{ ...FONT, color: TINTA }}
+      >
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-slate-500 text-sm">Memuat data profil...</p>
+          <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+          <p className="text-sm text-[#14213d]/65">Memuat data profil...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white px-4 py-4 flex items-center gap-3 sticky top-0 z-40 border-b border-slate-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-semibold text-slate-900">
-          Buat Kegiatan / Logbook
-        </h1>
-      </header>
-
-      <div className="p-5 space-y-5">
-        {/* Tanggal */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <label className="text-xs text-slate-500 mb-1 block">
-            Tanggal Kegiatan
+    <PageShell
+      onBack={() => navigate(-1)}
+      judul="Buat kegiatan"
+      deskripsi="Catat apa yang Anda kerjakan. Kegiatan yang dikirim akan ditinjau pembimbing."
+      samping={<DaftarLangkah langkah={LANGKAH} />}
+      tengah
+    >
+      <div className="space-y-5">
+        <div>
+          <label htmlFor="tanggal" className="mb-1.5 block text-sm font-semibold">
+            Tanggal kegiatan
           </label>
           <input
+            id="tanggal"
             type="date"
             value={formData.tanggal}
-            onChange={(e) =>
-              setFormData({ ...formData, tanggal: e.target.value })
-            }
-            className="input-field"
+            onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+            className={`${INPUT_CLS} h-11`}
             required
           />
         </div>
 
-        {/* Uraian Kegiatan */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-sm font-medium text-slate-700">
-              Uraian Kegiatan
+        <div>
+          <div className="mb-1.5 flex items-baseline justify-between">
+            <label htmlFor="uraian" className="text-sm font-semibold">
+              Uraian kegiatan
             </label>
-            <span className="text-xs text-slate-400">
+            <span className="font-mono text-xs text-[#14213d]/50">
               {formData.uraian.length}/1000
             </span>
           </div>
           <textarea
+            id="uraian"
             value={formData.uraian}
             onChange={(e) => {
               if (e.target.value.length <= 1000) {
@@ -143,41 +144,35 @@ export default function LogbookKegiatan() {
               }
             }}
             placeholder="Tuliskan kegiatan yang telah dilakukan..."
-            className="input-field min-h-[150px] resize-none"
+            className={`${INPUT_CLS} min-h-[160px] resize-none py-3`}
             required
           />
         </div>
 
-        {/* Upload Bukti */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <label className="text-sm font-medium text-slate-700 mb-2 block">
-            Upload Bukti (opsional)
-          </label>
+        <div>
+          <span className="mb-1.5 block text-sm font-semibold">Bukti (opsional)</span>
           {formData.bukti_file ? (
-            <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3 border border-slate-200">
-              <div className="flex items-center gap-2 min-w-0">
-                <Upload className="w-4 h-4 text-primary-600 flex-shrink-0" />
-                <span className="text-sm text-slate-700 truncate">
-                  {formData.bukti_file.name}
-                </span>
-              </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-[#14213d]/15 bg-[#f3efe6] px-3.5 py-3">
+              <span className="flex min-w-0 items-center gap-2">
+                <Upload className="h-4 w-4 shrink-0 text-[#2b4c7e]" />
+                <span className="truncate text-sm">{formData.bukti_file.name}</span>
+              </span>
               <button
                 type="button"
-                onClick={() =>
-                  setFormData({ ...formData, bukti_file: null })
-                }
-                className="p-1 text-slate-400 hover:text-rose-500"
+                onClick={() => setFormData({ ...formData, bukti_file: null })}
+                className="rounded p-1 text-[#14213d]/60 hover:bg-[#14213d]/10 hover:text-[#14213d]"
+                aria-label="Hapus file"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
-              <Upload className="w-8 h-8 text-slate-400 mb-2" />
-              <p className="text-sm text-slate-500">Pilih File</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Format: jpg, png, pdf (maks. 5MB)
-              </p>
+            <label className="flex h-28 w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#14213d]/30 bg-[#f3efe6]/50 transition-colors hover:bg-[#f3efe6]">
+              <Upload className="mb-1.5 h-6 w-6 text-[#2b4c7e]" strokeWidth={1.8} />
+              <span className="text-sm">Pilih file</span>
+              <span className="mt-0.5 text-xs text-[#14213d]/55">
+                JPG, PNG atau PDF, maksimal 5MB
+              </span>
               <input
                 type="file"
                 className="hidden"
@@ -195,38 +190,31 @@ export default function LogbookKegiatan() {
           )}
         </div>
 
-        {/* Tombol Aksi */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-3 pt-1">
           <button
             onClick={() => handleSubmit("draft")}
             disabled={loading}
-            className="bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#14213d]/25 bg-white text-sm font-semibold text-[#14213d] transition hover:bg-[#f3efe6] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? (
-              <span className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Simpan Draft
-              </>
-            )}
+            <Save className="h-4 w-4" />
+            Simpan draft
           </button>
           <button
             onClick={() => handleSubmit("menunggu")}
             disabled={loading}
-            className="btn-primary flex items-center justify-center gap-2"
+            className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#1d4ed8] text-sm font-semibold text-white transition hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
-              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
               <>
-                <Send className="w-4 h-4" />
+                <Send className="h-4 w-4" />
                 Kirim
               </>
             )}
           </button>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

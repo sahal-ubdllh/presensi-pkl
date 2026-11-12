@@ -1,14 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  MapPin,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Navigation,
-} from "lucide-react";
+import { LogIn, LogOut, CheckCircle2, ChevronRight } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -16,6 +9,8 @@ import { hitungJarak } from "../utils/distanceUtils";
 import { getTodayString } from "../utils/dateUtils";
 import toast from "react-hot-toast";
 import L from "leaflet";
+import PageShell from "../components/PageShell";
+import { FONT, TINTA, WARNA } from "../utils/tema";
 
 // Fix default marker icon issue in Leaflet + React
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -172,8 +167,7 @@ export default function Presensi() {
       if (error) throw error;
 
       if (jenis === "masuk" && data?.status === "terlambat") {
-        toast(`Presensi masuk tercatat pukul ${data.jam}: TERLAMBAT`, {
-          icon: "⏰",
+        toast(`Presensi masuk tercatat pukul ${data.jam}: terlambat`, {
           duration: 5000,
         });
       } else {
@@ -189,60 +183,74 @@ export default function Presensi() {
   // Loading screen
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div
+        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        style={{ ...FONT, color: TINTA }}
+      >
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-slate-500 text-sm">Memuat data presensi...</p>
+          <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+          <p className="text-sm text-[#14213d]/65">Memuat data presensi...</p>
         </div>
       </div>
     );
   }
 
+  const warnaStatus = isInRadius ? WARNA.tinta : WARNA.merah;
+
+  const infoJam = (
+    <dl className="divide-y divide-[#14213d]/10 border-y border-[#14213d]/10 text-[15px]">
+      <div className="flex gap-5 py-3">
+        <dt className="w-14 shrink-0 font-mono text-xs leading-6 text-[#2b4c7e]">Masuk</dt>
+        <dd>
+          Tepat waktu sampai {jam.masukBatas}, setelah itu tercatat{" "}
+          <span className="font-semibold" style={{ color: WARNA.ochre }}>
+            terlambat
+          </span>
+        </dd>
+      </div>
+      <div className="flex gap-5 py-3">
+        <dt className="w-14 shrink-0 font-mono text-xs leading-6 text-[#2b4c7e]">Pulang</dt>
+        <dd>
+          Pukul {jam.pulangMulai} sampai {jam.pulangBatas}
+        </dd>
+      </div>
+    </dl>
+  );
+
+  const statusLokasi = (
+    <div className="mt-6 max-w-sm rounded-xl border border-[#14213d]/10 bg-white/80 p-4 backdrop-blur-sm">
+      <div className="flex items-center gap-2.5">
+        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: warnaStatus }} />
+        <p className="text-sm font-semibold">
+          {isInRadius ? "Anda berada di area kantor" : "Anda di luar area kantor"}
+        </p>
+      </div>
+      <p className="mt-3 font-mono text-3xl font-semibold tabular-nums leading-none">
+        {distance !== null ? `${distance} m` : "..."}
+      </p>
+      <p className="mt-1.5 text-xs text-[#14213d]/60">
+        dari kantor, radius presensi {radius} m
+      </p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      {/* Header */}
-      <header className="bg-white px-4 py-4 flex items-center gap-3 sticky top-0 z-40 border-b border-slate-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-semibold text-slate-900">
-          Presensi Hari Ini
-        </h1>
-      </header>
-
-      <div className="p-5 space-y-5">
-        {/* Status Lokasi Card */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <div className="flex items-start gap-3">
-            <div
-              className={`p-2.5 rounded-xl ${isInRadius ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}
-            >
-              <MapPin className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-slate-900">
-                {isInRadius
-                  ? "Anda Berada di Area Kantor"
-                  : "Anda di Luar Area Kantor"}
-              </h3>
-              <p className="text-sm text-slate-500 mt-1">
-                Jarak:{" "}
-                {distance !== null ? `${distance} meter` : "Menghitung..."} dari
-                kantor
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Radius presensi: {radius} meter
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Map Section */}
-        {userLocation && officeLocation && (
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 h-64 relative z-0">
+    <PageShell
+      onBack={() => navigate(-1)}
+      judul="Presensi hari ini"
+      deskripsi="Presensi dicatat lewat GPS dan hanya bisa dilakukan di area kantor."
+      samping={
+        <>
+          {statusLokasi}
+          <div className="mt-8 hidden max-w-sm lg:block">{infoJam}</div>
+        </>
+      }
+      lebar="lg:max-w-lg"
+    >
+      <div className="space-y-6">
+        {/* Peta */}
+        {userLocation && officeLocation ? (
+          <div className="relative z-0 h-64 overflow-hidden rounded-xl border border-[#14213d]/15 lg:h-80">
             <MapContainer
               center={userLocation}
               zoom={16}
@@ -256,11 +264,7 @@ export default function Presensi() {
               <Circle
                 center={officeLocation}
                 radius={radius}
-                pathOptions={{
-                  color: "blue",
-                  fillColor: "#3b82f6",
-                  fillOpacity: 0.1,
-                }}
+                pathOptions={{ color: WARNA.biru, fillColor: WARNA.biru, fillOpacity: 0.12 }}
               />
               <Marker position={officeLocation}>
                 <Popup>Kantor Dinas Sosial</Popup>
@@ -270,115 +274,108 @@ export default function Presensi() {
               </Marker>
             </MapContainer>
           </div>
+        ) : (
+          <p className="rounded-xl border border-dashed border-[#14213d]/30 px-4 py-6 text-center text-sm text-[#14213d]/70">
+            Lokasi belum tersedia. Aktifkan GPS dan izinkan akses lokasi, lalu muat ulang halaman.
+          </p>
         )}
 
-        {/* Jam presensi */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm text-sm text-slate-600 space-y-1">
-          <p className="font-semibold text-slate-900 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary-600" /> Jam Presensi
-          </p>
-          <p>
-            Masuk: tepat waktu sampai {jam.masukBatas}, lewat dari itu tercatat{" "}
-            <span className="font-medium text-amber-600">Terlambat</span>
-          </p>
-          <p>
-            Pulang: pukul {jam.pulangMulai} - {jam.pulangBatas}
-          </p>
-        </div>
+        {/* Jam presensi (mobile; di desktop ada di sisi kiri) */}
+        <div className="lg:hidden">{infoJam}</div>
 
-        {/* Tombol Presensi */}
-        <div className="grid grid-cols-2 gap-4">
-          <button
+        {/* Tombol presensi */}
+        <div className="grid grid-cols-2 gap-3">
+          <TombolPresensi
+            ikon={LogIn}
+            selesai={todayPresensi.masuk}
+            judul="Presensi masuk"
+            judulSelesai="Sudah masuk"
+            ket={`Batas ${jam.masukBatas}`}
+            ketSelesai={masukStatus === "terlambat" ? "Terlambat" : "Tepat waktu"}
+            warnaKetSelesai={masukStatus === "terlambat" ? WARNA.ochre : WARNA.hijau}
+            nonaktif={todayPresensi.masuk || !userLocation}
             onClick={() => handlePresensi("masuk")}
-            disabled={todayPresensi.masuk || !userLocation}
-            className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all ${
-              todayPresensi.masuk
-                ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
-                : "bg-white border border-slate-200 text-slate-700 hover:border-primary-500 hover:text-primary-600 shadow-sm"
-            }`}
-          >
-            <div
-              className={`p-2.5 rounded-xl ${todayPresensi.masuk ? "bg-emerald-200" : "bg-primary-50 text-primary-600"}`}
-            >
-              {todayPresensi.masuk ? (
-                <CheckCircle2 className="w-5 h-5" />
-              ) : (
-                <Clock className="w-5 h-5" />
-              )}
-            </div>
-            <span className="font-semibold text-sm">
-              {todayPresensi.masuk ? "Sudah Masuk" : "Presensi Masuk"}
-            </span>
-            {/* Baris keterangan: selalu ada di kedua kartu agar tinggi & posisi ikon sejajar */}
-            <span
-              className={`text-[11px] font-medium min-h-4 ${
-                todayPresensi.masuk && masukStatus === "terlambat"
-                  ? "text-amber-600"
-                  : todayPresensi.masuk
-                    ? "text-emerald-700"
-                    : "text-slate-400"
-              }`}
-            >
-              {todayPresensi.masuk
-                ? masukStatus === "terlambat"
-                  ? "Terlambat"
-                  : "Tepat waktu"
-                : `Batas ${jam.masukBatas}`}
-            </span>
-          </button>
-
-          <button
+          />
+          <TombolPresensi
+            ikon={LogOut}
+            selesai={todayPresensi.pulang}
+            judul="Presensi pulang"
+            judulSelesai="Sudah pulang"
+            ket={`${jam.pulangMulai} - ${jam.pulangBatas}`}
+            ketSelesai="Tercatat"
+            warnaKetSelesai={WARNA.hijau}
+            nonaktif={todayPresensi.pulang || !todayPresensi.masuk || !userLocation}
             onClick={() => handlePresensi("pulang")}
-            disabled={
-              todayPresensi.pulang || !todayPresensi.masuk || !userLocation
-            }
-            className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all ${
-              todayPresensi.pulang
-                ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
-                : "bg-white border border-slate-200 text-slate-700 hover:border-primary-500 hover:text-primary-600 shadow-sm"
-            }`}
-          >
-            <div
-              className={`p-2.5 rounded-xl ${todayPresensi.pulang ? "bg-emerald-200" : "bg-rose-50 text-rose-600"}`}
-            >
-              {todayPresensi.pulang ? (
-                <CheckCircle2 className="w-5 h-5" />
-              ) : (
-                <Navigation className="w-5 h-5" />
-              )}
-            </div>
-            <span className="font-semibold text-sm">
-              {todayPresensi.pulang ? "Sudah Pulang" : "Presensi Pulang"}
-            </span>
-            <span
-              className={`text-[11px] font-medium min-h-4 ${
-                todayPresensi.pulang ? "text-emerald-700" : "text-slate-400"
-              }`}
-            >
-              {todayPresensi.pulang
-                ? "Tercatat"
-                : `${jam.pulangMulai} - ${jam.pulangBatas}`}
-            </span>
-          </button>
+          />
         </div>
 
-        {/* Link ke Presensi Manual & Riwayat */}
-        <div className="space-y-3 pt-2">
-          <button
+        {/* Tautan */}
+        <div className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/15 bg-white">
+          <TautanBaris
+            judul="Presensi manual"
+            ket="Di luar kantor, izin, atau sakit"
             onClick={() => navigate("/presensi-manual")}
-            className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <AlertCircle className="w-4 h-4" />
-            Presensi Manual (Di Luar Kantor)
-          </button>
-          <button
+          />
+          <TautanBaris
+            judul="Riwayat presensi"
+            ket="Lihat catatan dan unduh PDF"
             onClick={() => navigate("/riwayat-presensi")}
-            className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
-          >
-            Lihat Riwayat Presensi
-          </button>
+          />
         </div>
       </div>
-    </div>
+    </PageShell>
+  );
+}
+
+function TombolPresensi({
+  ikon: Ikon,
+  selesai,
+  judul,
+  judulSelesai,
+  ket,
+  ketSelesai,
+  warnaKetSelesai,
+  nonaktif,
+  onClick,
+}) {
+  const gaya = selesai
+    ? "border border-[#14213d]/20 bg-[#14213d]/[0.05] text-[#14213d] cursor-default"
+    : nonaktif
+      ? "border border-[#14213d]/10 bg-white text-[#14213d]/35 cursor-not-allowed"
+      : "bg-[#14213d] text-white hover:bg-[#1d2d52]";
+  return (
+    <button
+      onClick={onClick}
+      disabled={nonaktif}
+      className={`flex flex-col items-center justify-center gap-2 rounded-xl px-3 py-5 transition-colors ${gaya}`}
+    >
+      {selesai ? (
+        <CheckCircle2 className="h-6 w-6" strokeWidth={1.8} style={{ color: WARNA.hijau }} />
+      ) : (
+        <Ikon className="h-6 w-6" strokeWidth={1.8} />
+      )}
+      <span className="text-sm font-semibold">{selesai ? judulSelesai : judul}</span>
+      <span
+        className={`font-mono text-[11px] ${selesai ? "font-semibold" : "opacity-70"}`}
+        style={selesai ? { color: warnaKetSelesai } : undefined}
+      >
+        {selesai ? ketSelesai : ket}
+      </span>
+    </button>
+  );
+}
+
+function TautanBaris({ judul, ket, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#f3efe6]"
+    >
+      <span>
+        <span className="block text-sm font-semibold">{judul}</span>
+        <span className="block text-xs text-[#14213d]/60">{ket}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-[#14213d]/40" />
+    </button>
   );
 }

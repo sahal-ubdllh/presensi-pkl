@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Edit3,
-  Trash2,
-  Send,
-  FileText,
-  X,
-  Save,
-} from "lucide-react";
+import { Edit3, Trash2, Send, X, Save, Plus } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { formatDate, getTodayString } from "../utils/dateUtils";
 import toast from "react-hot-toast";
+import PageShell, { RingkasanAngka } from "../components/PageShell";
+import { INPUT_CLS } from "../utils/tema";
+
+// RLS yang menolak perintah TIDAK menghasilkan error, hanya 0 baris terpengaruh.
+// Karena itu hasilnya wajib dicek lewat .select() agar tidak menampilkan "berhasil" palsu.
+const pastikanBerubah = (data, pesan) => {
+  if (!data || data.length === 0) throw new Error(pesan);
+};
 
 // ─── Modal Edit Draft ──────────────────────────────────────────────────────────
 function EditDraftModal({ draft, onClose, onSaved }) {
@@ -29,12 +29,17 @@ function EditDraftModal({ draft, onClose, onSaved }) {
     }
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("kegiatan")
         .update({ tanggal: form.tanggal, uraian: form.uraian, status })
-        .eq("id", draft.id);
+        .eq("id", draft.id)
+        .select("id");
 
       if (error) throw error;
+      pastikanBerubah(
+        data,
+        "Draft tidak tersimpan. Database menolak perubahan (cek izin peserta).",
+      );
 
       toast.success(
         status === "draft"
@@ -51,73 +56,71 @@ function EditDraftModal({ draft, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6 relative animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#14213d]/50 p-4 backdrop-blur-sm sm:items-center">
+      <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-6 text-[#14213d]">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          className="absolute right-4 top-4 rounded p-1 text-[#14213d]/50 hover:bg-[#14213d]/10 hover:text-[#14213d]"
+          aria-label="Tutup"
         >
-          <X className="w-5 h-5" />
+          <X className="h-5 w-5" />
         </button>
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Edit Draft</h2>
+        <h2 className="mb-5 text-lg font-bold tracking-tight">Edit draft</h2>
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700 block mb-1">
-              Tanggal Kegiatan
+            <label htmlFor="edit-tanggal" className="mb-1.5 block text-sm font-semibold">
+              Tanggal kegiatan
             </label>
             <input
+              id="edit-tanggal"
               type="date"
               value={form.tanggal}
               onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
-              className="input-field"
+              className={`${INPUT_CLS} h-11`}
               max={getTodayString()}
             />
           </div>
           <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-sm font-medium text-slate-700">
-                Uraian Kegiatan
+            <div className="mb-1.5 flex items-baseline justify-between">
+              <label htmlFor="edit-uraian" className="text-sm font-semibold">
+                Uraian kegiatan
               </label>
-              <span className="text-xs text-slate-400">
-                {form.uraian.length}/1000
-              </span>
+              <span className="font-mono text-xs text-[#14213d]/50">{form.uraian.length}/1000</span>
             </div>
             <textarea
+              id="edit-uraian"
               value={form.uraian}
               onChange={(e) => {
-                if (e.target.value.length <= 1000)
-                  setForm({ ...form, uraian: e.target.value });
+                if (e.target.value.length <= 1000) setForm({ ...form, uraian: e.target.value });
               }}
-              className="input-field min-h-[140px] resize-none"
+              className={`${INPUT_CLS} min-h-[140px] resize-none py-3`}
               placeholder="Tuliskan kegiatan yang telah dilakukan..."
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 pt-1">
             <button
               onClick={() => handleSave("draft")}
               disabled={saving}
-              className="bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-[#14213d]/25 text-sm font-semibold transition hover:bg-[#f3efe6] disabled:opacity-50"
             >
-              {saving ? (
-                <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
+              <Save className="h-4 w-4" />
               Simpan
             </button>
             <button
               onClick={() => handleSave("menunggu")}
               disabled={saving}
-              className="btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[#1d4ed8] text-sm font-semibold text-white transition hover:bg-[#1e40af] disabled:opacity-50"
             >
               {saving ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
-                <Send className="w-4 h-4" />
+                <>
+                  <Send className="h-4 w-4" />
+                  Kirim
+                </>
               )}
-              Kirim
             </button>
           </div>
         </div>
@@ -153,19 +156,30 @@ export default function DraftKegiatan() {
   };
 
   useEffect(() => {
-    if (profile) fetchDrafts();
+    if (!profile) return;
+
+    const timer = setTimeout(() => {
+      fetchDrafts();
+    }, 0);
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   const handleKirim = async (id) => {
     const toastId = toast.loading("Mengirim kegiatan...");
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("kegiatan")
         .update({ status: "menunggu" })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
 
       if (error) throw error;
+      pastikanBerubah(
+        data,
+        "Kegiatan tidak terkirim. Database menolak perubahan (cek izin peserta).",
+      );
 
       setDrafts(drafts.filter((d) => d.id !== id));
       toast.success("Kegiatan berhasil dikirim!", { id: toastId });
@@ -177,8 +191,16 @@ export default function DraftKegiatan() {
   const handleHapus = async (id) => {
     const toastId = toast.loading("Menghapus draft...");
     try {
-      const { error } = await supabase.from("kegiatan").delete().eq("id", id);
+      const { data, error } = await supabase
+        .from("kegiatan")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      pastikanBerubah(
+        data,
+        "Draft tidak terhapus. Database menolak penghapusan (cek izin peserta).",
+      );
 
       setDrafts(drafts.filter((d) => d.id !== id));
       toast.success("Draft berhasil dihapus", { id: toastId });
@@ -188,95 +210,81 @@ export default function DraftKegiatan() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      <header className="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-40 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">
-              Draft Kegiatan
-            </h1>
-            {!loading && (
-              <p className="text-xs text-slate-400">
-                {drafts.length} draft tersimpan
-              </p>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <div className="p-5">
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : drafts.length === 0 ? (
-          <div className="text-center py-16">
-            <FileText className="w-16 h-16 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 mb-4">Belum ada draft kegiatan</p>
+    <>
+      <PageShell
+        onBack={() => navigate(-1)}
+        judul="Draft kegiatan"
+        deskripsi="Kegiatan yang sudah ditulis tapi belum dikirim ke pembimbing."
+        samping={
+          <>
+            <RingkasanAngka data={[["Draft tersimpan", drafts.length]]} memuat={loading} />
             <button
               onClick={() => navigate("/logbook")}
-              className="btn-primary inline-flex items-center gap-2"
+              className="mt-6 hidden items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline lg:inline-flex"
             >
-              <Edit3 className="w-4 h-4" />
-              Buat Kegiatan Baru
+              <Plus className="h-4 w-4" />
+              Buat kegiatan baru
+            </button>
+          </>
+        }
+        lebar="lg:max-w-lg"
+      >
+        {loading ? (
+          <div className="flex justify-center rounded-xl border border-[#14213d]/10 bg-white py-14">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+          </div>
+        ) : drafts.length === 0 ? (
+          <div className="rounded-xl border border-[#14213d]/10 bg-white px-6 py-12 text-center">
+            <p className="text-[15px] text-[#14213d]/70">Belum ada draft kegiatan.</p>
+            <button
+              onClick={() => navigate("/logbook")}
+              className="mt-4 inline-flex h-11 items-center gap-2 rounded-lg bg-[#1d4ed8] px-5 text-sm font-semibold text-white transition hover:bg-[#1e40af]"
+            >
+              <Edit3 className="h-4 w-4" />
+              Buat kegiatan baru
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
             {drafts.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
-              >
-                {/* Info */}
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-500 mb-1">
-                      {formatDate(item.tanggal)}
-                    </p>
-                    <p className="text-sm font-medium text-slate-900 line-clamp-2">
-                      {item.uraian}
-                    </p>
+              <li key={item.id} className="p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-xs text-[#2b4c7e]">{formatDate(item.tanggal)}</p>
+                    <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed">{item.uraian}</p>
                   </div>
-                  {/* Tombol Edit */}
                   <button
                     onClick={() => setEditingDraft(item)}
-                    className="ml-3 p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors flex-shrink-0"
+                    className="shrink-0 rounded-lg p-2 text-[#14213d]/50 transition-colors hover:bg-[#14213d]/10 hover:text-[#14213d]"
                     title="Edit draft"
+                    aria-label="Edit draft"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="h-4 w-4" />
                   </button>
                 </div>
-
-                {/* Aksi */}
-                <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => handleKirim(item.id)}
-                    className="flex-1 bg-primary-50 text-primary-600 py-2 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors flex items-center justify-center gap-1.5"
+                    className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#1d4ed8] text-sm font-semibold text-white transition hover:bg-[#1e40af]"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="h-3.5 w-3.5" />
                     Kirim
                   </button>
                   <button
                     onClick={() => handleHapus(item.id)}
-                    className="px-3 bg-rose-50 text-rose-600 py-2 rounded-lg text-sm font-semibold hover:bg-rose-100 transition-colors"
+                    className="flex h-9 items-center justify-center rounded-lg border border-[#a63d2f]/30 px-3 text-[#a63d2f] transition hover:bg-[#a63d2f]/10"
+                    title="Hapus draft"
+                    aria-label="Hapus draft"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
+      </PageShell>
 
-      {/* Modal Edit */}
       {editingDraft && (
         <EditDraftModal
           draft={editingDraft}
@@ -284,6 +292,6 @@ export default function DraftKegiatan() {
           onSaved={fetchDrafts}
         />
       )}
-    </div>
+    </>
   );
 }

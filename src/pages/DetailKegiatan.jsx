@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  Calendar,
-  FileText,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  ExternalLink,
-} from "lucide-react";
+import { FileText, ExternalLink } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../utils/dateUtils";
+import PageShell from "../components/PageShell";
+import { FONT, TINTA, WARNA, gayaChip } from "../utils/tema";
 import toast from "react-hot-toast";
+
+const STATUS = {
+  disetujui: { label: "Disetujui", warna: WARNA.hijau },
+  menunggu: { label: "Menunggu review", warna: WARNA.biru },
+  ditolak: { label: "Ditolak", warna: WARNA.merah },
+};
 
 export default function DetailKegiatan() {
   const { id } = useParams();
@@ -40,126 +40,90 @@ export default function DetailKegiatan() {
     fetchDetail();
   }, [id]);
 
-  const getStatusInfo = (status) => {
-    const info = {
-      disetujui: {
-        label: "Disetujui",
-        color: "bg-emerald-50 text-emerald-600",
-        icon: CheckCircle2,
-      },
-      menunggu: {
-        label: "Menunggu Review",
-        color: "bg-amber-50 text-amber-600",
-        icon: Clock,
-      },
-      ditolak: {
-        label: "Ditolak",
-        color: "bg-rose-50 text-rose-600",
-        icon: XCircle,
-      },
-    };
-    return info[status] || info.menunggu;
-  };
-
-  if (loading) {
+  if (loading || !kegiatan) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+      <div
+        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        style={{ ...FONT, color: TINTA }}
+      >
+        {loading ? (
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+        ) : (
+          <div className="text-center">
+            <p className="text-[#14213d]/70">Kegiatan tidak ditemukan</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="mt-3 text-sm font-semibold text-[#1d4ed8] hover:underline"
+            >
+              Kembali
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
-  if (!kegiatan) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-slate-500">Kegiatan tidak ditemukan</p>
-      </div>
-    );
-  }
-
-  const statusInfo = getStatusInfo(kegiatan.status);
-  const StatusIcon = statusInfo.icon;
+  const st = STATUS[kegiatan.status] || STATUS.menunggu;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white px-4 py-4 flex items-center gap-3 sticky top-0 z-40 border-b border-slate-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-semibold text-slate-900">Detail Kegiatan</h1>
-      </header>
-
-      <div className="p-5 space-y-4">
-        {/* Header Card */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Calendar className="w-4 h-4" />
-              <span>{formatDate(kegiatan.tanggal)}</span>
-            </div>
-            <span
-              className={`text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 ${statusInfo.color}`}
-            >
-              <StatusIcon className="w-3.5 h-3.5" />
-              {statusInfo.label}
-            </span>
-          </div>
+    <PageShell
+      onBack={() => navigate(-1)}
+      judul="Detail kegiatan"
+      deskripsi={undefined}
+      samping={
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <span className="font-mono text-sm text-[#2b4c7e]">{formatDate(kegiatan.tanggal)}</span>
+          <span
+            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            style={gayaChip(st.warna)}
+          >
+            {st.label}
+          </span>
         </div>
-
-        {/* Uraian */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <h2 className="text-sm font-semibold text-slate-700 mb-2">
-            Uraian Kegiatan
-          </h2>
-          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+      }
+      lebar="lg:max-w-lg"
+    >
+      <div className="space-y-6">
+        <section>
+          <h2 className="mb-2 text-sm font-semibold">Uraian kegiatan</h2>
+          <p className="whitespace-pre-wrap rounded-xl border border-[#14213d]/10 bg-white p-4 text-[15px] leading-relaxed lg:border-[#14213d]/20">
             {kegiatan.uraian}
           </p>
-        </div>
+        </section>
 
-        {/* Bukti Kegiatan */}
         {kegiatan.bukti_file && (
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <h2 className="text-sm font-semibold text-slate-700 mb-3">
-              Bukti Kegiatan
-            </h2>
+          <section>
+            <h2 className="mb-2 text-sm font-semibold">Bukti kegiatan</h2>
             {kegiatan.bukti_file.match(/\.(jpg|jpeg|png|gif)$/i) ? (
               <img
                 src={kegiatan.bukti_file}
-                alt="Bukti"
-                className="w-full rounded-xl border border-slate-200"
+                alt="Bukti kegiatan"
+                className="w-full rounded-xl border border-[#14213d]/15"
               />
             ) : (
               <a
                 href={kegiatan.bukti_file}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors"
+                className="flex items-center gap-3 rounded-xl border border-[#14213d]/15 bg-white p-4 transition-colors hover:bg-[#f3efe6]"
               >
-                <FileText className="w-5 h-5 text-primary-600" />
-                <span className="text-sm text-slate-700 flex-1 truncate">
-                  Lihat File
-                </span>
-                <ExternalLink className="w-4 h-4 text-slate-400" />
+                <FileText className="h-5 w-5 text-[#2b4c7e]" />
+                <span className="flex-1 truncate text-sm">Lihat file</span>
+                <ExternalLink className="h-4 w-4 text-[#14213d]/40" />
               </a>
             )}
-          </div>
+          </section>
         )}
 
-        {/* Catatan Pembimbing */}
         {kegiatan.catatan_pembimbing && (
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <h2 className="text-sm font-semibold text-slate-700 mb-2">
-              Catatan Pembimbing
-            </h2>
-            <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl">
+          <section>
+            <h2 className="mb-2 text-sm font-semibold">Catatan pembimbing</h2>
+            <p className="rounded-xl border-l-2 border-[#2b4c7e] bg-[#f3efe6] p-4 text-[15px] leading-relaxed">
               {kegiatan.catatan_pembimbing}
             </p>
-          </div>
+          </section>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

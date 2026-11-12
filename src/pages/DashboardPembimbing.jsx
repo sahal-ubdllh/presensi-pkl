@@ -154,9 +154,11 @@ export default function DashboardPembimbing() {
     }
   };
 
-  const handleReviewPresensi = async (id, isApproved) => {
+  const handleReviewPresensi = async (id, isApproved, kategori) => {
     try {
-      const target = isApproved ? "hadir" : "ditolak";
+      // Pengajuan izin/sakit disetujui menjadi izin/sakit, bukan hadir
+      const disetujui = kategori === "izin" || kategori === "sakit" ? kategori : "hadir";
+      const target = isApproved ? disetujui : "ditolak";
       const { data, error } = await supabase
         .from("presensi")
         .update({ status: target })
@@ -254,7 +256,12 @@ export default function DashboardPembimbing() {
                         month: "short",
                         year: "numeric",
                       })}{" "}
-                      • Presensi {item.jenis}
+                      •{" "}
+                      {item.kategori === "izin"
+                        ? "Pengajuan izin"
+                        : item.kategori === "sakit"
+                          ? "Pengajuan sakit"
+                          : `Presensi ${item.jenis}`}
                     </p>
                   </div>
                   <StatusBadge status="menunggu" />
@@ -275,13 +282,13 @@ export default function DashboardPembimbing() {
                   )}
                 <div className="flex gap-2 mt-2">
                   <button
-                    onClick={() => handleReviewPresensi(item.id, true)}
+                    onClick={() => handleReviewPresensi(item.id, true, item.kategori)}
                     className="flex-1 bg-emerald-50 text-emerald-600 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-100"
                   >
                     Setujui
                   </button>
                   <button
-                    onClick={() => handleReviewPresensi(item.id, false)}
+                    onClick={() => handleReviewPresensi(item.id, false, item.kategori)}
                     className="flex-1 bg-rose-50 text-rose-600 py-2 rounded-xl text-sm font-semibold hover:bg-rose-100"
                   >
                     Tolak

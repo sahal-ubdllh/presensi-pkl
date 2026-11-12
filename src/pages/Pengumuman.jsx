@@ -181,40 +181,29 @@ export default function Pengumuman({ readOnly = false }) {
   // ── MODE EMBED (di dalam Dashboard peserta) ────────────────────────────────
   if (readOnly) {
     return (
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-bold text-slate-700">Pengumuman Terbaru</p>
-          <Megaphone className="w-4 h-4 text-primary-500" />
+      <section className="rounded-xl border border-[#14213d]/10 bg-white p-5 text-[#14213d] sm:p-6">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold">Pengumuman terbaru</h2>
+          <Megaphone className="h-4 w-4 text-[#2b4c7e]" />
         </div>
         {loading ? (
-          <div className="flex justify-center py-6">
-            <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          <div className="flex justify-center py-8">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
           </div>
         ) : pengumuman.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-slate-400">Belum ada pengumuman</p>
-          </div>
+          <p className="py-8 text-center text-sm text-[#14213d]/50">Belum ada pengumuman</p>
         ) : (
-          <div className="space-y-2">
+          <ul className="mt-3 divide-y divide-[#14213d]/10">
             {pengumuman.map((item) => (
-              <div
-                key={item.id}
-                className="border-l-2 border-primary-300 pl-3 py-1"
-              >
-                <p className="text-xs font-semibold text-slate-800 line-clamp-1">
-                  {item.judul}
-                </p>
-                <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">
-                  {item.isi}
-                </p>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  {formatDate(item.created_at)}
-                </p>
-              </div>
+              <li key={item.id} className="py-3 first:pt-1 last:pb-0">
+                <p className="line-clamp-1 text-sm font-semibold">{item.judul}</p>
+                <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-[#14213d]/70">{item.isi}</p>
+                <p className="mt-1.5 font-mono text-[11px] text-[#2b4c7e]">{formatDate(item.created_at)}</p>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
     );
   }
 

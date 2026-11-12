@@ -84,6 +84,8 @@ const labelPresensi = (r) => {
   if (r.status === "ditolak") return "Ditolak";
   if (r.status === "hadir") return "Hadir";
   if (r.status === "terlambat") return "Terlambat";
+  if (r.status === "izin") return "Izin";
+  if (r.status === "sakit") return "Sakit";
   return clean(r.status) || "-";
 };
 
@@ -97,11 +99,13 @@ export async function buildPresensiPdf(profile, rows) {
   const terlambatHari = new Set(
     hadirRows.filter((r) => r.status === "terlambat").map((r) => r.tanggal),
   ).size;
+  const hariUnik = (st) =>
+    new Set(rows.filter((r) => r.status === st && r.jenis === "masuk").map((r) => r.tanggal)).size;
   const startY = header(
     doc,
     "Riwayat Presensi",
     profile,
-    `Total catatan: ${rows.length}   |   Hari hadir: ${hadirHari}   |   Terlambat: ${terlambatHari}`,
+    `Total catatan: ${rows.length}   |   Hari hadir: ${hadirHari}   |   Terlambat: ${terlambatHari}   |   Izin: ${hariUnik("izin")}   |   Sakit: ${hariUnik("sakit")}`,
   );
 
   autoTable(doc, {

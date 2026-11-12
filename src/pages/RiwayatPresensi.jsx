@@ -1,48 +1,106 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Download,
-} from "lucide-react";
+import { ArrowLeft, Download, Plus } from "lucide-react";
+import "@fontsource-variable/public-sans";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
-import { formatDate } from "../utils/dateUtils";
 import { downloadPresensiPdf } from "../utils/pdfExport";
+import konturUrl from "../assets/kontur.svg";
 import toast from "react-hot-toast";
+
+// Palet sama dengan Login dan Dashboard
+const KERTAS = "#f3efe6";
+const TINTA = "#14213d";
+const FONT = { fontFamily: '"Public Sans Variable", system-ui, sans-serif' };
+const LATAR_KONTUR = {
+  backgroundColor: KERTAS,
+  backgroundImage: `url(${konturUrl})`,
+  backgroundSize: "cover",
+  backgroundPosition: "right bottom",
+};
+
+const WARNA = {
+  tinta: "#14213d",
+  biru: "#2b4c7e",
+  izin: "#b7791f",
+  merah: "#a63d2f",
+};
+
+// Judul baris + label status untuk satu catatan presensi
+function uraikan(item) {
+  const kategori =
+    item.kategori === "izin" || item.kategori === "sakit"
+      ? item.kategori
+      : item.status === "izin" || item.status === "sakit"
+        ? item.status
+        : null;
+
+  const judul = kategori
+    ? kategori === "izin"
+      ? "Izin"
+      : "Sakit"
+    : item.jenis === "masuk"
+      ? "Masuk"
+      : "Pulang";
+
+  let chip;
+  if (item.status === "menunggu") chip = { teks: "Menunggu persetujuan", warna: WARNA.biru };
+  else if (item.status === "ditolak") chip = { teks: "Ditolak", warna: WARNA.merah };
+  else if (kategori === "izin") chip = { teks: "Izin", warna: WARNA.izin };
+  else if (kategori === "sakit") chip = { teks: "Sakit", warna: WARNA.merah };
+  else if (item.status === "terlambat") chip = { teks: "Terlambat", warna: WARNA.izin };
+  else if (item.metode === "manual") chip = { teks: "Manual", warna: WARNA.biru };
+  else if (item.dalam_radius) chip = { teks: "Di area kantor", warna: WARNA.tinta };
+  else chip = { teks: "Di luar area", warna: WARNA.merah };
+
+  const metode = kategori
+    ? "Pengajuan"
+    : item.metode === "otomatis"
+      ? "Otomatis"
+      : "Manual";
+
+  return { judul, chip, metode };
+}
+
+function pecahTanggal(tanggal) {
+  const d = new Date(tanggal);
+  return {
+    hari: d.toLocaleDateString("id-ID", { day: "2-digit" }),
+    bulan: d.toLocaleDateString("id-ID", { month: "short", year: "numeric" }),
+    nama: d.toLocaleDateString("id-ID", { weekday: "long" }),
+  };
+}
 
 export default function RiwayatPresensi() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [riwayat, setRiwayat] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchRiwayat = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("presensi")
-        .select("*")
-        .eq("user_id", profile.id)
-        .order("tanggal", { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      setRiwayat(data);
-    } catch (error) {
-      toast.error(error.message || "Gagal memuat riwayat");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    fetchRiwayat();
-  },);
-
-  const [downloading, setDownloading] = useState(false);
+    if (!profile?.id) return;
+    let batal = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("presensi")
+          .select("*")
+          .eq("user_id", profile.id)
+          .order("tanggal", { ascending: false })
+          .limit(50);
+        if (error) throw error;
+        if (!batal) setRiwayat(data || []);
+      } catch (error) {
+        if (!batal) toast.error(error.message || "Gagal memuat riwayat");
+      } finally {
+        if (!batal) setLoading(false);
+      }
+    })();
+    return () => {
+      batal = true;
+    };
+  }, [profile?.id]);
 
   // Ambil SEMUA riwayat (tampilan hanya memuat 50 terbaru), lalu buat PDF
   const handleDownload = async () => {
@@ -70,113 +128,128 @@ export default function RiwayatPresensi() {
     }
   };
 
-  const getStatusIcon = (metode, dalam_radius, statusPresensi) => {
-    if (statusPresensi === "ditolak")
-      return <AlertCircle className="w-4 h-4 text-rose-500" />;
-    if (statusPresensi === "terlambat")
-      return <Clock className="w-4 h-4 text-amber-500" />;
-    if (metode === "manual")
-      return <AlertCircle className="w-4 h-4 text-amber-500" />;
-    if (dalam_radius)
-      return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
-    return <AlertCircle className="w-4 h-4 text-rose-500" />;
-  };
-
-  const getStatusText = (metode, dalam_radius, statusPresensi) => {
-    if (statusPresensi === "menunggu")
-      return {
-        text: "Menunggu Persetujuan",
-        color: "text-amber-600 bg-amber-50",
-      };
-    if (statusPresensi === "ditolak")
-      return { text: "Ditolak", color: "text-rose-600 bg-rose-50" };
-    if (statusPresensi === "terlambat")
-      return { text: "Terlambat", color: "text-amber-600 bg-amber-50" };
-    if (metode === "manual")
-      return { text: "Manual", color: "text-amber-600 bg-amber-50" };
-    if (dalam_radius)
-      return {
-        text: "Di Area Kantor",
-        color: "text-emerald-600 bg-emerald-50",
-      };
-    return { text: "Di Luar Area", color: "text-rose-600 bg-rose-50" };
-  };
+  const hariUnik = (fn) => new Set(riwayat.filter(fn).map((r) => r.tanggal)).size;
+  const ringkasan = [
+    ["Hadir", hariUnik((r) => r.jenis === "masuk" && (r.status === "hadir" || r.status === "terlambat"))],
+    ["Izin", hariUnik((r) => r.status === "izin")],
+    ["Sakit", hariUnik((r) => r.status === "sakit")],
+    ["Menunggu", hariUnik((r) => r.status === "menunggu")],
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white px-4 py-4 flex items-center gap-3 sticky top-0 z-40 border-b border-slate-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-semibold text-slate-900">
-          Riwayat Presensi
-        </h1>
-        <button
-          onClick={handleDownload}
-          disabled={downloading || loading}
-          className="ml-auto flex items-center gap-1.5 bg-primary-600 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download className="w-4 h-4" />
-          {downloading ? "Menyiapkan..." : "PDF"}
-        </button>
-      </header>
+    <div
+      className="min-h-screen bg-[#f3efe6] lg:grid lg:grid-cols-[1.08fr_1fr]"
+      style={{ ...FONT, color: TINTA }}
+    >
+      <aside
+        style={LATAR_KONTUR}
+        className="px-5 pb-6 pt-5 sm:px-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-between lg:px-14 lg:py-12 xl:px-20"
+      >
+        <div className="mx-auto flex w-full max-w-xl items-center justify-between lg:mx-0 lg:max-w-none">
+          <button
+            onClick={() => navigate(-1)}
+            className="-ml-2 flex items-center gap-1.5 rounded-lg p-2 text-sm font-medium text-[#14213d]/70 transition-colors hover:bg-[#14213d]/10 hover:text-[#14213d]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Kembali
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={downloading || loading}
+            className="flex items-center gap-1.5 rounded-lg bg-[#14213d] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#1d2d52] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            {downloading ? "Menyiapkan..." : "Unduh PDF"}
+          </button>
+        </div>
 
-      <div className="p-5">
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : riwayat.length === 0 ? (
-          <div className="text-center py-10 text-slate-500">
-            Belum ada riwayat presensi.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {riwayat.map((item) => {
-              const status = getStatusText(item.metode, item.dalam_radius, item.status);
-              return (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4"
-                >
-                  <div className={`p-2.5 rounded-xl ${status.color}`}>
-                    {getStatusIcon(item.metode, item.dalam_radius, item.status)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-slate-900 text-sm">
-                        {formatDate(item.tanggal)}
-                      </h3>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded-full ${status.color}`}
-                      >
-                        {status.text}
-                      </span>
+        <div className="mx-auto mt-4 w-full max-w-xl lg:mx-0 lg:mt-0 lg:max-w-lg">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-5xl lg:leading-[1.1]">
+            Riwayat presensi
+          </h1>
+          <p className="mt-1.5 text-[15px] text-[#14213d]/70 lg:mt-3 lg:text-base">
+            50 catatan terbaru. PDF memuat seluruh riwayat.
+          </p>
+
+          <dl className="mt-10 hidden max-w-sm grid-cols-4 divide-x divide-[#14213d]/10 border-y border-[#14213d]/10 py-4 lg:grid">
+            {ringkasan.map(([label, nilai], i) => (
+              <div key={label} className={i === 0 ? "pr-4" : "px-4"}>
+                <dd className="font-mono text-3xl font-semibold tabular-nums leading-none">
+                  {loading ? "-" : nilai}
+                </dd>
+                <dt className="mt-2 text-xs text-[#14213d]/65">{label}</dt>
+              </div>
+            ))}
+          </dl>
+          <button
+            onClick={() => navigate("/presensi-manual")}
+            className="mt-6 hidden items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline lg:inline-flex"
+          >
+            <Plus className="h-4 w-4" />
+            Buat presensi manual
+          </button>
+        </div>
+
+        <p className="hidden text-xs text-[#14213d]/55 lg:block">
+          &copy; {new Date().getFullYear()} Dinas Sosial Kabupaten Majalengka
+        </p>
+      </aside>
+
+      <main className="lg:min-h-screen lg:bg-white lg:px-16 lg:py-12">
+        <div className="mx-auto mt-6 w-full max-w-xl px-5 pb-16 sm:px-8 lg:mt-0 lg:max-w-lg lg:px-0 lg:pb-0">
+          {loading ? (
+            <div className="flex justify-center rounded-xl border border-[#14213d]/10 bg-white py-14">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+            </div>
+          ) : riwayat.length === 0 ? (
+            <div className="rounded-xl border border-[#14213d]/10 bg-white px-6 py-12 text-center">
+              <p className="text-[15px] text-[#14213d]/70">Belum ada riwayat presensi.</p>
+              <button
+                onClick={() => navigate("/presensi-manual")}
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline"
+              >
+                <Plus className="h-4 w-4" />
+                Buat presensi manual
+              </button>
+            </div>
+          ) : (
+            <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
+              {riwayat.map((item) => {
+                const { judul, chip, metode } = uraikan(item);
+                const t = pecahTanggal(item.tanggal);
+                return (
+                  <li key={item.id} className="flex items-center gap-4 px-4 py-3.5 sm:px-5">
+                    <div className="w-12 shrink-0 text-center">
+                      <p className="font-mono text-2xl font-semibold leading-none tabular-nums">
+                        {t.hari}
+                      </p>
+                      <p className="mt-1 text-[10px] uppercase tracking-wide text-[#14213d]/55">
+                        {t.bulan}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                      <span
-                        className={`font-medium ${item.jenis === "masuk" ? "text-emerald-600" : "text-rose-600"}`}
-                      >
-                        {item.jenis === "masuk" ? "Masuk" : "Pulang"}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        {item.metode === "otomatis" ? "Otomatis" : "Manual"}
-                      </span>
-                      {item.alasan && (
-                        <span>• {item.alasan.substring(0, 20)}...</span>
-                      )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">
+                        {judul}
+                        <span className="ml-2 font-normal text-[#14213d]/55">{t.nama}</span>
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-[#14213d]/60">
+                        {metode}
+                        {item.alasan && ` · ${item.alasan}`}
+                      </p>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                    <span
+                      className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                      style={{ color: chip.warna, backgroundColor: `${chip.warna}14` }}
+                    >
+                      {chip.teks}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

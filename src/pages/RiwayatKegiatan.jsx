@@ -1,17 +1,26 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, FileText, Download } from "lucide-react";
+import { ChevronRight, Download, Plus } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { formatDate } from "../utils/dateUtils";
 import { downloadKegiatanPdf } from "../utils/pdfExport";
+import PageShell, { RingkasanAngka } from "../components/PageShell";
+import { WARNA, gayaChip } from "../utils/tema";
 import toast from "react-hot-toast";
+
+const STATUS = {
+  disetujui: { label: "Disetujui", warna: WARNA.hijau },
+  menunggu: { label: "Menunggu", warna: WARNA.biru },
+  ditolak: { label: "Ditolak", warna: WARNA.merah },
+};
 
 export default function RiwayatKegiatan() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [kegiatan, setKegiatan] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const fetchKegiatan = async () => {
@@ -35,8 +44,6 @@ export default function RiwayatKegiatan() {
     if (profile) fetchKegiatan();
   }, [profile]);
 
-  const [downloading, setDownloading] = useState(false);
-
   const handleDownload = async () => {
     setDownloading(true);
     try {
@@ -50,87 +57,88 @@ export default function RiwayatKegiatan() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      disetujui: "bg-emerald-50 text-emerald-600",
-      menunggu: "bg-amber-50 text-amber-600",
-      ditolak: "bg-rose-50 text-rose-600",
-    };
-    const labels = {
-      disetujui: "Disetujui",
-      menunggu: "Menunggu",
-      ditolak: "Ditolak",
-    };
-    return {
-      className: styles[status] || "bg-slate-50 text-slate-600",
-      label: labels[status] || status,
-    };
-  };
+  const hitung = (st) => kegiatan.filter((k) => k.status === st).length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white px-4 py-4 flex items-center gap-3 sticky top-0 z-40 border-b border-slate-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-semibold text-slate-900">
-          Riwayat Kegiatan
-        </h1>
+    <PageShell
+      onBack={() => navigate(-1)}
+      aksi={
         <button
           onClick={handleDownload}
           disabled={downloading || loading || kegiatan.length === 0}
-          className="ml-auto flex items-center gap-1.5 bg-primary-600 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 rounded-lg bg-[#14213d] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#1d2d52] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Download className="w-4 h-4" />
-          {downloading ? "Menyiapkan..." : "PDF"}
+          <Download className="h-4 w-4" />
+          {downloading ? "Menyiapkan..." : "Unduh PDF"}
         </button>
-      </header>
-
-      <div className="p-5">
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : kegiatan.length === 0 ? (
-          <div className="text-center py-16">
-            <FileText className="w-16 h-16 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">Belum ada riwayat kegiatan</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {kegiatan.map((item) => {
-              const badge = getStatusBadge(item.status);
-              return (
+      }
+      judul="Riwayat kegiatan"
+      deskripsi="Semua kegiatan yang sudah Anda kirim ke pembimbing."
+      samping={
+        <>
+          <RingkasanAngka
+            memuat={loading}
+            data={[
+              ["Disetujui", hitung("disetujui")],
+              ["Menunggu", hitung("menunggu")],
+              ["Ditolak", hitung("ditolak")],
+            ]}
+          />
+          <button
+            onClick={() => navigate("/logbook")}
+            className="mt-6 hidden items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline lg:inline-flex"
+          >
+            <Plus className="h-4 w-4" />
+            Buat kegiatan baru
+          </button>
+        </>
+      }
+      lebar="lg:max-w-lg"
+    >
+      {loading ? (
+        <div className="flex justify-center rounded-xl border border-[#14213d]/10 bg-white py-14">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+        </div>
+      ) : kegiatan.length === 0 ? (
+        <div className="rounded-xl border border-[#14213d]/10 bg-white px-6 py-12 text-center">
+          <p className="text-[15px] text-[#14213d]/70">Belum ada riwayat kegiatan.</p>
+          <button
+            onClick={() => navigate("/logbook")}
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline"
+          >
+            <Plus className="h-4 w-4" />
+            Buat kegiatan
+          </button>
+        </div>
+      ) : (
+        <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
+          {kegiatan.map((item) => {
+            const st = STATUS[item.status] || { label: item.status, warna: WARNA.tinta };
+            return (
+              <li key={item.id}>
                 <button
-                  key={item.id}
                   onClick={() => navigate(`/kegiatan/${item.id}`)}
-                  className="w-full bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow text-left"
+                  className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[#f3efe6] sm:px-5"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-slate-500">
-                        {formatDate(item.tanggal)}
-                      </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-mono text-xs text-[#2b4c7e]">{formatDate(item.tanggal)}</p>
                       <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded-full ${badge.className}`}
+                        className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                        style={gayaChip(st.warna)}
                       >
-                        {badge.label}
+                        {st.label}
                       </span>
                     </div>
-                    <p className="text-sm font-medium text-slate-900 line-clamp-2">
-                      {item.uraian}
-                    </p>
+                    <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed">{item.uraian}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#14213d]/40" />
                 </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </PageShell>
   );
 }
