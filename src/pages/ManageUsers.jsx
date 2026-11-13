@@ -1,8 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Trash2,
   Search,
   UserPlus,
@@ -14,6 +12,8 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import toast from "react-hot-toast";
+import PageShell, { RingkasanAngka } from "../components/PageShell";
+import { FONT, TINTA, WARNA, INPUT_CLS } from "../utils/tema";
 
 // Panggil Edge Function admin-users dan ambil pesan error yang jelas
 const callAdminUsers = async (body) => {
@@ -168,7 +168,7 @@ export default function ManageUsers() {
   const handleDeleteUser = async (id, email) => {
     if (
       !window.confirm(
-        `Yakin ingin menghapus ${email}? Data tidak bisa dikembalikan.`,
+        `Yakin ingin menonaktifkan ${email}? Akun ini tidak akan bisa login lagi.`,
       )
     )
       return;
@@ -191,139 +191,140 @@ export default function ManageUsers() {
       u.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const peranTab = activeTab === "peserta" ? "Peserta" : "Pembimbing";
+
+  const bukaTambah = () => {
+    setNewUser((prev) => ({
+      ...prev,
+      role: activeTab === "peserta" ? "peserta" : "pembimbing",
+    }));
+    setShowModal(true);
+  };
+
+  const labelCls = "mb-1.5 block text-sm font-semibold";
+  const overlayCls =
+    "fixed inset-0 z-50 flex items-end justify-center bg-[#14213d]/50 p-4 backdrop-blur-sm sm:items-center";
+  const panelCls =
+    "relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-6 text-[#14213d]";
+  const tutupCls =
+    "absolute right-4 top-4 rounded p-1 text-[#14213d]/50 hover:bg-[#14213d]/10 hover:text-[#14213d]";
+
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      {/* Header */}
-      <header className="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-40 border-b border-slate-100">
-        <div className="flex items-center gap-3">
+    <>
+      <PageShell
+        onBack={() => navigate(-1)}
+        aksi={
           <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            onClick={bukaTambah}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1d4ed8] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#1e40af]"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <UserPlus className="h-4 w-4" />
+            Tambah akun
           </button>
-          <h1 className="text-lg font-semibold text-slate-900">
-            Kelola Pengguna
-          </h1>
-        </div>
-        <button
-          onClick={() => {
-            setNewUser((prev) => ({
-              ...prev,
-              role: activeTab === "peserta" ? "peserta" : "pembimbing",
-            }));
-            setShowModal(true);
-          }}
-          className="bg-primary-600 text-white p-2 rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <UserPlus className="w-5 h-5" />
-        </button>
-      </header>
-
-      <div className="p-5 space-y-4">
-        {/* Tabs Switcher */}
-        <div className="flex bg-white p-1 rounded-xl border border-slate-200">
-          <button
-            onClick={() => {
-              setActiveTab("peserta");
-              setSearchTerm("");
-            }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === "peserta" ? "bg-primary-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}
-          >
-            Daftar Peserta
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("pembimbing");
-              setSearchTerm("");
-            }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === "pembimbing" ? "bg-primary-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}
-          >
-            Daftar Pembimbing
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            placeholder={`Cari ${activeTab}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-field pl-10"
-          />
-        </div>
-
-        {/* List Users */}
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full"></div>
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="text-center py-10 text-slate-500">
-            Tidak ada data ditemukan.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredUsers.map((user) => (
-              <div
-                key={user.id}
-                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between"
+        }
+        judul="Kelola pengguna"
+        deskripsi="Tambah, lihat, dan nonaktifkan akun peserta dan pembimbing."
+        samping={<RingkasanAngka data={[[peranTab, users.length]]} memuat={loading} />}
+        lebar="lg:max-w-xl"
+      >
+        <div className="space-y-4">
+          {/* Tab */}
+          <div className="grid grid-cols-2 rounded-lg border border-[#14213d]/15 bg-white p-1">
+            {["peserta", "pembimbing"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setSearchTerm("");
+                }}
+                className={`h-9 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === tab
+                    ? "bg-[#14213d] text-white"
+                    : "text-[#14213d]/70 hover:bg-[#f3efe6]"
+                }`}
               >
-                <div className="flex-1 min-w-0 mr-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-slate-900 truncate">
-                      {user.nama_lengkap}
-                    </h3>
-                    {user.role === "pembimbing" && (
-                      <ShieldCheck size={14} className="text-primary-600" />
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 truncate">
-                    {user.email}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    {user.jenis_peserta} • {user.asal_instansi}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => bukaReset(user)}
-                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                    title="Reset password"
-                    aria-label="Reset password"
-                  >
-                    <KeyRound className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteUser(user.id, user.email)}
-                    className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                    title="Nonaktifkan akun"
-                    aria-label="Nonaktifkan akun"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+                {tab === "peserta" ? "Peserta" : "Pembimbing"}
+              </button>
             ))}
           </div>
-        )}
-      </div>
 
-      {/* Modal Reset Password */}
+          {/* Cari */}
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#14213d]/40" />
+            <input
+              type="text"
+              placeholder={`Cari ${activeTab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`${INPUT_CLS} h-11 pl-10 text-sm`}
+            />
+          </div>
+
+          {/* Daftar */}
+          {loading ? (
+            <div className="flex justify-center rounded-xl border border-[#14213d]/10 bg-white py-14">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#14213d]/25 px-6 py-12 text-center text-sm text-[#14213d]/65">
+              Tidak ada data ditemukan.
+            </div>
+          ) : (
+            <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
+              {filteredUsers.map((user) => (
+                <li key={user.id} className="flex items-center gap-3 px-4 py-3.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#14213d]/[0.07] text-sm font-semibold">
+                    {user.nama_lengkap?.charAt(0)?.toUpperCase() || "U"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-semibold">{user.nama_lengkap}</p>
+                      {user.role === "pembimbing" && (
+                        <ShieldCheck size={14} className="shrink-0 text-[#2b4c7e]" />
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-[#14213d]/60">{user.email}</p>
+                    {(user.jenis_peserta || user.asal_instansi) && (
+                      <p className="mt-0.5 truncate text-[11px] text-[#14213d]/45">
+                        {[user.jenis_peserta, user.asal_instansi].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center">
+                    <button
+                      onClick={() => bukaReset(user)}
+                      className="rounded-lg p-2 text-[#14213d]/60 transition-colors hover:bg-[#14213d]/10 hover:text-[#14213d]"
+                      title="Reset password"
+                      aria-label="Reset password"
+                    >
+                      <KeyRound className="h-[18px] w-[18px]" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user.id, user.email)}
+                      className="rounded-lg p-2 transition-colors hover:bg-[#a63d2f]/10"
+                      style={{ color: WARNA.merah }}
+                      title="Nonaktifkan akun"
+                      aria-label="Nonaktifkan akun"
+                    >
+                      <Trash2 className="h-[18px] w-[18px]" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </PageShell>
+
+      {/* Modal reset password */}
       {resetTarget && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative">
-            <button
-              onClick={tutupReset}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
-              aria-label="Tutup"
-            >
-              <X className="w-6 h-6" />
+        <div className={overlayCls} style={{ ...FONT, color: TINTA }}>
+          <div className={panelCls}>
+            <button onClick={tutupReset} className={tutupCls} aria-label="Tutup">
+              <X className="h-5 w-5" />
             </button>
-            <h2 className="text-xl font-bold text-slate-900 mb-1">Reset Password</h2>
-            <p className="text-sm text-slate-500 mb-4 break-all">
+            <h2 className="text-lg font-bold tracking-tight">Reset password</h2>
+            <p className="mb-5 mt-1 break-all text-sm text-[#14213d]/65">
               {resetTarget.nama_lengkap}
               <br />
               <span className="text-xs">{resetTarget.email}</span>
@@ -331,27 +332,30 @@ export default function ManageUsers() {
 
             {resetDone ? (
               <div className="space-y-4">
-                <p className="text-sm text-emerald-700 bg-emerald-50 rounded-xl p-3">
-                  Password berhasil diubah. Berikan password ini kepada pengguna,
-                  lalu minta mereka menyimpannya. Password tidak akan ditampilkan lagi.
+                <p
+                  className="rounded-lg p-3 text-sm leading-relaxed"
+                  style={{ color: WARNA.hijau, backgroundColor: `${WARNA.hijau}14` }}
+                >
+                  Password berhasil diubah. Berikan password ini kepada pengguna, lalu minta
+                  mereka menyimpannya. Password tidak akan ditampilkan lagi.
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-base font-mono tracking-wide">
+                  <code className="flex-1 rounded-lg bg-[#f3efe6] px-4 py-3 font-mono text-base tracking-wide">
                     {resetPw}
                   </code>
                   <button
                     type="button"
                     onClick={salinPassword}
-                    className="p-3 bg-slate-100 rounded-xl hover:bg-slate-200"
+                    className="rounded-lg bg-[#f3efe6] p-3 hover:bg-[#ebe5d6]"
                     aria-label="Salin password"
                   >
-                    <Copy className="w-5 h-5" />
+                    <Copy className="h-5 w-5" />
                   </button>
                 </div>
                 <button
                   type="button"
                   onClick={tutupReset}
-                  className="w-full bg-primary-600 text-white font-semibold py-3 rounded-xl hover:bg-primary-700"
+                  className="h-11 w-full rounded-lg bg-[#1d4ed8] font-semibold text-white hover:bg-[#1e40af]"
                 >
                   Selesai
                 </button>
@@ -359,39 +363,40 @@ export default function ManageUsers() {
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-1">
+                  <label htmlFor="pw-baru" className={labelCls}>
                     Password baru
                   </label>
                   <div className="flex items-center gap-2">
                     <input
+                      id="pw-baru"
                       type="text"
                       value={resetPw}
                       onChange={(e) => setResetPw(e.target.value)}
                       minLength={6}
                       required
                       autoComplete="off"
-                      className="flex-1 border border-slate-200 rounded-xl px-4 py-3 font-mono"
+                      className={`${INPUT_CLS} h-11 flex-1 font-mono`}
                     />
                     <button
                       type="button"
                       onClick={() => setResetPw(passwordAcak())}
-                      className="p-3 bg-slate-100 rounded-xl hover:bg-slate-200"
+                      className="rounded-lg bg-[#f3efe6] p-3 hover:bg-[#ebe5d6]"
                       title="Buat acak"
                       aria-label="Buat password acak"
                     >
-                      <RefreshCw className="w-5 h-5" />
+                      <RefreshCw className="h-5 w-5" />
                     </button>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Minimal 6 karakter. Pengguna lama yang sedang login tidak otomatis keluar.
+                  <p className="mt-1.5 text-xs text-[#14213d]/55">
+                    Minimal 6 karakter. Pengguna yang sedang login tidak otomatis keluar.
                   </p>
                 </div>
                 <button
                   type="submit"
                   disabled={resetting}
-                  className="w-full bg-primary-600 text-white font-semibold py-3 rounded-xl hover:bg-primary-700 disabled:opacity-60"
+                  className="h-11 w-full rounded-lg bg-[#1d4ed8] font-semibold text-white hover:bg-[#1e40af] disabled:opacity-60"
                 >
-                  {resetting ? "Menyimpan..." : "Simpan Password Baru"}
+                  {resetting ? "Menyimpan..." : "Simpan password baru"}
                 </button>
               </form>
             )}
@@ -399,77 +404,60 @@ export default function ManageUsers() {
         </div>
       )}
 
-      {/* Modal Tambah User */}
+      {/* Modal tambah user */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-6 h-6" />
+        <div className={overlayCls} style={{ ...FONT, color: TINTA }}>
+          <div className={panelCls}>
+            <button onClick={() => setShowModal(false)} className={tutupCls} aria-label="Tutup">
+              <X className="h-5 w-5" />
             </button>
-            <h2 className="text-xl font-bold text-slate-900 mb-4">
-              Tambah{" "}
-              {activeTab === "peserta" ? "Peserta Baru" : "Pembimbing Baru"}
+            <h2 className="mb-5 text-lg font-bold tracking-tight">
+              Tambah {activeTab === "peserta" ? "peserta baru" : "pembimbing baru"}
             </h2>
 
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-1">
-                  Email
-                </label>
+                <label htmlFor="u-email" className={labelCls}>Email</label>
                 <input
+                  id="u-email"
                   required
                   type="email"
                   value={newUser.email}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, email: e.target.value })
-                  }
-                  className="input-field"
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className={`${INPUT_CLS} h-11`}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-1">
-                  Password Default
-                </label>
+                <label htmlFor="u-pw" className={labelCls}>Password default</label>
                 <input
+                  id="u-pw"
                   required
                   type="text"
                   value={newUser.password}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, password: e.target.value })
-                  }
-                  className="input-field"
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  className={`${INPUT_CLS} h-11`}
                   placeholder="Min. 6 karakter"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-1">
-                  Nama Lengkap
-                </label>
+                <label htmlFor="u-nama" className={labelCls}>Nama lengkap</label>
                 <input
+                  id="u-nama"
                   required
                   type="text"
                   value={newUser.nama_lengkap}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, nama_lengkap: e.target.value })
-                  }
-                  className="input-field"
+                  onChange={(e) => setNewUser({ ...newUser, nama_lengkap: e.target.value })}
+                  className={`${INPUT_CLS} h-11`}
                 />
               </div>
 
-              {/* Dropdown Role Dinamis */}
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-1">
-                  Role Akun
-                </label>
+                <label htmlFor="u-role" className={labelCls}>Role akun</label>
                 <select
+                  id="u-role"
                   value={newUser.role}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, role: e.target.value })
-                  }
-                  className="input-field"
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  className={`${INPUT_CLS} h-11`}
                 >
                   <option value="peserta">Peserta PKL</option>
                   <option value="pembimbing">Pembimbing Lapangan</option>
@@ -477,42 +465,30 @@ export default function ManageUsers() {
                 </select>
               </div>
 
-              {/* Field khusus Peserta — sembunyikan jika role bukan peserta */}
+              {/* Isian khusus peserta */}
               {newUser.role === "peserta" && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium text-slate-700 block mb-1">
-                      Jenis
-                    </label>
+                    <label htmlFor="u-jenis" className={labelCls}>Jenis</label>
                     <select
+                      id="u-jenis"
                       value={newUser.jenis_peserta}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          jenis_peserta: e.target.value,
-                        })
-                      }
-                      className="input-field"
+                      onChange={(e) => setNewUser({ ...newUser, jenis_peserta: e.target.value })}
+                      className={`${INPUT_CLS} h-11`}
                     >
                       <option value="Mahasiswa">Mahasiswa (D3/S1)</option>
                       <option value="Siswa">Siswa (SMK/SMA)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-700 block mb-1">
-                      Instansi
-                    </label>
+                    <label htmlFor="u-inst" className={labelCls}>Instansi</label>
                     <input
+                      id="u-inst"
                       required
                       type="text"
                       value={newUser.asal_instansi}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          asal_instansi: e.target.value,
-                        })
-                      }
-                      className="input-field"
+                      onChange={(e) => setNewUser({ ...newUser, asal_instansi: e.target.value })}
+                      className={`${INPUT_CLS} h-11`}
                     />
                   </div>
                 </div>
@@ -521,14 +497,14 @@ export default function ManageUsers() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full mt-2"
+                className="mt-2 h-11 w-full rounded-lg bg-[#1d4ed8] font-semibold text-white hover:bg-[#1e40af] disabled:opacity-60"
               >
-                {loading ? "Memproses..." : "Simpan Akun"}
+                {loading ? "Memproses..." : "Simpan akun"}
               </button>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

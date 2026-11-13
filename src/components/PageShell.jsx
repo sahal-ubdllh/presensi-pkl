@@ -6,6 +6,7 @@ import { FONT, LATAR_KONTUR, TINTA } from "../utils/tema";
  * isi halaman di sisi kanan. Sama dengan susunan halaman Login.
  *
  * @param judul, deskripsi  teks utama di sisi kontur
+ * @param atas              elemen di atas judul (mis. foto profil)
  * @param samping           isi tambahan di sisi kontur (ringkasan, langkah, dsb.)
  * @param aksi              tombol di pojok kanan atas sisi kontur
  * @param lebar            kelas lebar maksimum isi kanan di desktop
@@ -16,6 +17,7 @@ export default function PageShell({
   aksi,
   judul,
   deskripsi,
+  atas,
   samping,
   tengah = false,
   lebar = "lg:max-w-md",
@@ -42,6 +44,7 @@ export default function PageShell({
         </div>
 
         <div className="mx-auto mt-4 w-full max-w-xl lg:mx-0 lg:mt-0 lg:max-w-lg">
+          {atas}
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-5xl lg:leading-[1.1]">
             {judul}
           </h1>
@@ -101,5 +104,22 @@ export function RingkasanAngka({ data, memuat }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+// Foto profil bulat; bila belum ada foto, tampil inisial
+export function Avatar({ profile, className = "" }) {
+  return (
+    <div
+      className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#14213d] ring-4 ring-white/80 lg:h-28 lg:w-28 ${className}`}
+    >
+      {profile?.foto_profil ? (
+        <img src={profile.foto_profil} alt="Foto profil" className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-3xl font-bold text-white lg:text-4xl">
+          {profile?.nama_lengkap?.charAt(0)?.toUpperCase() || "U"}
+        </span>
+      )}
+    </div>
   );
 }

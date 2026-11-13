@@ -1,49 +1,46 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Save } from "lucide-react";
+import { Camera, Save } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import PageShell, { Avatar } from "../components/PageShell";
+import { FONT, TINTA, INPUT_CLS } from "../utils/tema";
 import toast from "react-hot-toast";
 
 export default function EditProfil() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile } = useAuth();
+
+  // Form hanya dipasang setelah profil tersedia, jadi isian awal langsung terisi
+  if (!profile) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        style={{ ...FONT, color: TINTA }}
+      >
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+      </div>
+    );
+  }
+  return <FormEditProfil profile={profile} />;
+}
+
+function FormEditProfil({ profile }) {
+  const { refreshProfile } = useAuth();
   const navigate = useNavigate();
   // Jenis peserta & asal instansi hanya untuk peserta PKL (bukan pembimbing/admin)
-  const isPeserta = profile?.role === "peserta";
+  const isPeserta = profile.role === "peserta";
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const isFirstRender = useRef(true);
 
-  // Inisialisasi form data
   const [formData, setFormData] = useState({
-    nama_lengkap: "",
-    jenis_peserta: "Mahasiswa",
-    asal_instansi: "",
-    no_telepon: "",
+    nama_lengkap: profile.nama_lengkap || "",
+    jenis_peserta: profile.jenis_peserta || "Mahasiswa",
+    asal_instansi: profile.asal_instansi || "",
+    no_telepon: profile.no_telepon || "",
   });
-
-  // Update formData hanya saat profile berubah (dan bukan render pertama)
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    
-    if (profile) {
-      setFormData({
-        nama_lengkap: profile.nama_lengkap || "",
-        jenis_peserta: profile.jenis_peserta || "Mahasiswa",
-        asal_instansi: profile.asal_instansi || "",
-        no_telepon: profile.no_telepon || "",
-      });
-    }
-  }, [profile]);
 
   // Fungsi Upload Foto Profil
   const handleImageUpload = async (e) => {
-    if (!profile) return;
-    
     try {
       setUploading(true);
       const file = e.target.files[0];
@@ -63,9 +60,9 @@ export default function EditProfil() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("foto-profil")
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("foto-profil").getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
         .from("users")
@@ -86,18 +83,13 @@ export default function EditProfil() {
   // Fungsi Simpan Perubahan Data
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!profile) return;
-    
     setLoading(true);
 
     try {
       const payload = isPeserta
         ? formData
         : { nama_lengkap: formData.nama_lengkap, no_telepon: formData.no_telepon };
-      const { error } = await supabase
-        .from("users")
-        .update(payload)
-        .eq("id", profile.id);
+      const { error } = await supabase.from("users").update(payload).eq("id", profile.id);
 
       if (error) throw error;
 
@@ -111,149 +103,112 @@ export default function EditProfil() {
     }
   };
 
-  // Loading state
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  const ubah = (kolom) => (e) => setFormData({ ...formData, [kolom]: e.target.value });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white px-4 py-4 flex items-center gap-3 sticky top-0 z-40 border-b border-slate-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-semibold text-slate-900">Edit Profil</h1>
-      </header>
-
-      <div className="p-5 space-y-5">
-        {/* Avatar Upload Section */}
-        <div className="flex flex-col items-center py-4">
-          <div className="relative">
-            <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-sm">
-              {profile?.foto_profil ? (
-                <img
-                  src={profile.foto_profil}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-3xl font-bold text-primary-600">
-                  {profile?.nama_lengkap?.charAt(0) || "U"}
-                </span>
-              )}
-            </div>
-            <label
-              className={`absolute bottom-0 right-0 bg-primary-600 text-white p-2 rounded-full cursor-pointer hover:bg-primary-700 shadow-md transition-colors ${
-                uploading ? "opacity-50 pointer-events-none" : ""
-              }`}
-            >
-              <Camera className="w-4 h-4" />
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={uploading}
-              />
-            </label>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Ketuk ikon kamera untuk mengubah foto (Max 2MB)
-          </p>
+    <PageShell
+      onBack={() => navigate(-1)}
+      atas={
+        <div className="relative mb-5 w-fit">
+          <Avatar profile={profile} />
+          <label
+            className={`absolute -bottom-1 -right-1 cursor-pointer rounded-full bg-[#1d4ed8] p-2 text-white shadow transition hover:bg-[#1e40af] ${
+              uploading ? "pointer-events-none opacity-50" : ""
+            }`}
+            title="Ganti foto"
+          >
+            <Camera className="h-4 w-4" />
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploading}
+            />
+          </label>
+        </div>
+      }
+      judul="Edit profil"
+      deskripsi="Perbarui data diri Anda. Ketuk ikon kamera untuk mengganti foto (maksimal 2MB)."
+      tengah
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="nama" className="mb-1.5 block text-sm font-semibold">
+            Nama lengkap
+          </label>
+          <input
+            id="nama"
+            type="text"
+            value={formData.nama_lengkap}
+            onChange={ubah("nama_lengkap")}
+            className={`${INPUT_CLS} h-11`}
+            required
+          />
         </div>
 
-        {/* Form Edit Data */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 ml-1">
-              Nama Lengkap
-            </label>
-            <input
-              type="text"
-              value={formData.nama_lengkap}
-              onChange={(e) =>
-                setFormData({ ...formData, nama_lengkap: e.target.value })
-              }
-              className="input-field"
-              required
-            />
-          </div>
+        {isPeserta && (
+          <>
+            <div>
+              <label htmlFor="jenis" className="mb-1.5 block text-sm font-semibold">
+                Jenis peserta
+              </label>
+              <select
+                id="jenis"
+                value={formData.jenis_peserta}
+                onChange={ubah("jenis_peserta")}
+                className={`${INPUT_CLS} h-11`}
+              >
+                <option value="Mahasiswa">Mahasiswa</option>
+                <option value="Siswa">Siswa</option>
+              </select>
+            </div>
 
-          {isPeserta && (
+            <div>
+              <label htmlFor="instansi" className="mb-1.5 block text-sm font-semibold">
+                Asal instansi
+              </label>
+              <input
+                id="instansi"
+                type="text"
+                value={formData.asal_instansi}
+                onChange={ubah("asal_instansi")}
+                className={`${INPUT_CLS} h-11`}
+                required
+              />
+            </div>
+          </>
+        )}
+
+        <div>
+          <label htmlFor="telp" className="mb-1.5 block text-sm font-semibold">
+            No. telepon
+          </label>
+          <input
+            id="telp"
+            type="tel"
+            value={formData.no_telepon}
+            onChange={ubah("no_telepon")}
+            className={`${INPUT_CLS} h-11`}
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1d4ed8] text-base font-semibold text-white transition hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? (
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
             <>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 ml-1">
-              Jenis Peserta
-            </label>
-            <select
-              value={formData.jenis_peserta}
-              onChange={(e) =>
-                setFormData({ ...formData, jenis_peserta: e.target.value })
-              }
-              className="input-field appearance-none bg-white"
-            >
-              <option value="Mahasiswa">Mahasiswa</option>
-              <option value="Siswa">Siswa</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 ml-1">
-              Asal Instansi
-            </label>
-            <input
-              type="text"
-              value={formData.asal_instansi}
-              onChange={(e) =>
-                setFormData({ ...formData, asal_instansi: e.target.value })
-              }
-              className="input-field"
-              required
-            />
-          </div>
-
+              <Save className="h-4 w-4" />
+              Simpan perubahan
             </>
           )}
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 ml-1">
-              No. Telepon
-            </label>
-            <input
-              type="tel"
-              value={formData.no_telepon}
-              onChange={(e) =>
-                setFormData({ ...formData, no_telepon: e.target.value })
-              }
-              className="input-field"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary mt-6 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Simpan Perubahan
-              </>
-            )}
-          </button>
-        </form>
-      </div>
-    </div>
+        </button>
+      </form>
+    </PageShell>
   );
 }

@@ -358,7 +358,7 @@ export default function Dashboard() {
           </div>
 
           {/* ── Statistik + pengumuman ── */}
-          <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
             <section className="rounded-xl border border-[#14213d]/10 bg-white p-5 sm:p-6">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-sm font-semibold">Statistik kehadiran</h2>

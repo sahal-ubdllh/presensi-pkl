@@ -1,19 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  CheckCircle,
-  Clock,
-  Users,
-  FileText,
-  Megaphone,
-  AlertTriangle,
-} from "lucide-react";
+import { Megaphone, Paperclip } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { getTodayString } from "../utils/dateUtils";
 import toast from "react-hot-toast";
-import BottomNav from "../components/BottomNav";
+import DashboardLayout from "../components/DashboardLayout";
+import { FONT, TINTA, WARNA, LATAR_KONTUR, gayaChip } from "../utils/tema";
 
 export default function DashboardPembimbing() {
   const { profile } = useAuth();
@@ -181,241 +175,251 @@ export default function DashboardPembimbing() {
   };
 
   if (loading)
-    return <div className="p-10 text-center">Memuat dashboard...</div>;
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        style={{ ...FONT, color: TINTA }}
+      >
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+          <p className="text-sm text-[#14213d]/65">Memuat dashboard...</p>
+        </div>
+      </div>
+    );
+
+  const namaDepan = profile?.nama_lengkap?.split(" ")[0] || "Pembimbing";
+  const peran = profile?.role === "admin" ? "Admin" : "Pembimbing";
+  const tanggal = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  // Daftar presensi menunggu dibatasi 20 baris
+  const jumlahPresensi = pendingPresensi.length >= 20 ? "20+" : pendingPresensi.length;
+
+  const ringkasan = [
+    ["Peserta", stats.totalPeserta],
+    ["Hadir hari ini", stats.hadirHariIni],
+    ["Pengumuman", stats.totalPengumuman],
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50 p-5 pb-24">
-      <div className="flex justify-between items-center mb-1">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Dashboard Pembimbing
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Selamat datang,{" "}
-            <span className="font-semibold text-primary-600">
-              {profile?.nama_lengkap || "Pembimbing"}
-            </span>
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/pengumuman")}
-          className="bg-primary-600 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm hover:bg-primary-700 transition-colors"
-        >
-          <Megaphone size={16} /> Buat Pengumuman
-        </button>
-      </div>
-
-      {/* Kartu Statistik */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-5">
-        <StatCard
-          icon={Users}
-          label="Total Peserta"
-          value={stats.totalPeserta}
-          color="blue"
-        />
-        <StatCard
-          icon={CheckCircle}
-          label="Hadir Hari Ini"
-          value={stats.hadirHariIni}
-          color="emerald"
-        />
-        <StatCard
-          icon={Clock}
-          label="Pending Review"
-          value={stats.pendingKegiatan}
-          color="amber"
-        />
-        <StatCard
-          icon={FileText}
-          label="Pengumuman"
-          value={stats.totalPengumuman}
-          color="purple"
-        />
-      </div>
-
-      {/* Presensi Manual Menunggu Persetujuan */}
-      {pendingPresensi.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">
-            Presensi Manual Menunggu Persetujuan
-          </h2>
-          <div className="space-y-3">
-            {pendingPresensi.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white p-4 rounded-2xl shadow-sm border border-amber-100"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1 min-w-0 mr-2">
-                    <p className="font-semibold text-slate-900 truncate">
-                      {item.users?.nama_lengkap || "Peserta"}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}{" "}
-                      •{" "}
-                      {item.kategori === "izin"
-                        ? "Pengajuan izin"
-                        : item.kategori === "sakit"
-                          ? "Pengajuan sakit"
-                          : `Presensi ${item.jenis}`}
-                    </p>
-                  </div>
-                  <StatusBadge status="menunggu" />
-                </div>
-                {item.alasan && (
-                  <p className="text-sm text-slate-700 mb-2">{item.alasan}</p>
-                )}
-                {typeof item.bukti_file === "string" &&
-                  item.bukti_file.startsWith("http") && (
-                    <a
-                      href={item.bukti_file}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-block text-xs font-medium text-primary-600 underline mb-3"
-                    >
-                      Lihat bukti
-                    </a>
-                  )}
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => handleReviewPresensi(item.id, true, item.kategori)}
-                    className="flex-1 bg-emerald-50 text-emerald-600 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-100"
-                  >
-                    Setujui
-                  </button>
-                  <button
-                    onClick={() => handleReviewPresensi(item.id, false, item.kategori)}
-                    className="flex-1 bg-rose-50 text-rose-600 py-2 rounded-xl text-sm font-semibold hover:bg-rose-100"
-                  >
-                    Tolak
-                  </button>
+    <DashboardLayout className="bg-[#f3efe6]">
+      <div style={{ ...FONT, color: TINTA }}>
+        <header style={LATAR_KONTUR} className="pb-16 pt-6">
+          <div className="mx-auto max-w-6xl px-5 sm:px-8">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <img src="/logo-dinsos.png" alt="Logo Dinas Sosial" className="h-9 w-auto" />
+                <div className="border-l border-[#14213d]/20 pl-3 text-xs leading-snug">
+                  <p className="font-semibold">Dinas Sosial</p>
+                  <p className="text-[#14213d]/65">Kabupaten Majalengka</p>
                 </div>
               </div>
-            ))}
+              <button
+                onClick={() => navigate("/pengumuman")}
+                className="flex h-10 items-center gap-2 rounded-lg bg-[#1d4ed8] px-4 text-sm font-semibold text-white transition hover:bg-[#1e40af]"
+              >
+                <Megaphone className="h-4 w-4" />
+                <span className="hidden sm:inline">Buat pengumuman</span>
+                <span className="sm:hidden">Pengumuman</span>
+              </button>
+            </div>
+
+            <div className="mt-8">
+              <p className="font-mono text-xs tracking-wide text-[#2b4c7e]">{tanggal}</p>
+              <h1 className="mt-1.5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                Halo, {namaDepan}
+              </h1>
+              <p className="mt-1 text-[15px] text-[#14213d]/70">Dashboard {peran}</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="mx-auto -mt-10 max-w-6xl space-y-8 px-5 pb-28 sm:px-8">
+          {/* Ringkasan */}
+          <section className="rounded-xl bg-[#14213d] p-5 text-white shadow-[0_8px_24px_-12px_rgba(20,33,61,0.6)] sm:p-6 lg:flex lg:items-end lg:justify-between lg:gap-10">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
+                Perlu ditinjau
+              </p>
+              <div className="mt-4 flex items-end gap-10">
+                <div>
+                  <p className="font-mono text-5xl font-semibold tabular-nums leading-none">
+                    {jumlahPresensi}
+                  </p>
+                  <p className="mt-2 text-sm text-white/70">Presensi manual</p>
+                </div>
+                <div className="h-14 w-px bg-white/15" />
+                <div>
+                  <p className="font-mono text-5xl font-semibold tabular-nums leading-none">
+                    {stats.pendingKegiatan}
+                  </p>
+                  <p className="mt-2 text-sm text-white/70">Kegiatan</p>
+                </div>
+              </div>
+            </div>
+            <dl className="mt-6 grid grid-cols-3 divide-x divide-white/15 border-t border-white/15 pt-5 lg:mt-0 lg:w-[22rem] lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+              {ringkasan.map(([label, nilai], i) => (
+                <div key={label} className={i === 0 ? "pr-3" : "px-3"}>
+                  <dd className="font-mono text-2xl font-semibold tabular-nums leading-none">{nilai}</dd>
+                  <dt className="mt-1.5 text-[11px] leading-tight text-white/65">{label}</dt>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+            {/* Presensi manual menunggu persetujuan */}
+            <section>
+              <h2 className="mb-2.5 flex items-baseline gap-3 text-sm font-semibold">
+                <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">01</span>
+                Presensi manual menunggu persetujuan
+              </h2>
+              {pendingPresensi.length === 0 ? (
+                <Kosong pesan="Tidak ada presensi manual yang menunggu." />
+              ) : (
+                <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white">
+                  {pendingPresensi.map((item) => (
+                    <li key={item.id} className="p-4 sm:p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">
+                            {item.users?.nama_lengkap || "Peserta"}
+                          </p>
+                          <p className="mt-0.5 font-mono text-xs text-[#2b4c7e]">
+                            {new Date(item.tanggal).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                            {" · "}
+                            {item.kategori === "izin"
+                              ? "Pengajuan izin"
+                              : item.kategori === "sakit"
+                                ? "Pengajuan sakit"
+                                : `Presensi ${item.jenis}`}
+                          </p>
+                        </div>
+                        <StatusBadge status="menunggu" />
+                      </div>
+                      {item.alasan && (
+                        <p className="mt-2.5 text-sm leading-relaxed text-[#14213d]/85">{item.alasan}</p>
+                      )}
+                      {typeof item.bukti_file === "string" && item.bukti_file.startsWith("http") && (
+                        <a
+                          href={item.bukti_file}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#1d4ed8] hover:underline"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          Lihat bukti
+                        </a>
+                      )}
+                      <TombolTinjau
+                        onSetuju={() => handleReviewPresensi(item.id, true, item.kategori)}
+                        onTolak={() => handleReviewPresensi(item.id, false, item.kategori)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* Monitoring kegiatan terbaru */}
+            <section>
+              <h2 className="mb-2.5 flex items-baseline gap-3 text-sm font-semibold">
+                <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">02</span>
+                Kegiatan terbaru
+              </h2>
+              {recentActivities.length === 0 ? (
+                <Kosong pesan="Belum ada kegiatan yang dilaporkan." />
+              ) : (
+                <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white">
+                  {recentActivities.map((item) => (
+                    <li key={item.id} className="p-4 sm:p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">
+                            {item.users?.nama_lengkap || "Peserta"}
+                          </p>
+                          <p className="mt-0.5 font-mono text-xs text-[#2b4c7e]">
+                            {new Date(item.tanggal || item.created_at).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        <StatusBadge status={item.status} />
+                      </div>
+                      {item.judul && <p className="mt-2 text-sm font-medium">{item.judul}</p>}
+                      <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-[#14213d]/85">
+                        {item.uraian}
+                      </p>
+                      {item.status === "menunggu" && (
+                        <TombolTinjau
+                          onSetuju={() => handleApprove(item.id, true)}
+                          onTolak={() => handleApprove(item.id, false)}
+                        />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
           </div>
         </div>
-      )}
-
-      {/* Monitoring Kegiatan Terbaru */}
-      <h2 className="text-lg font-semibold text-slate-800 mb-4">
-        Monitoring Kegiatan Terbaru
-      </h2>
-      {recentActivities.length === 0 ? (
-        <EmptyState message="Belum ada kegiatan yang dilaporkan" />
-      ) : (
-        <div className="space-y-3">
-          {recentActivities.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex-1 min-w-0 mr-2">
-                  <p className="font-semibold text-slate-900 truncate">
-                    {item.users?.nama_lengkap}
-                  </p>
-                  {item.judul && (
-                    <p className="text-xs font-medium text-primary-600 truncate">
-                      {item.judul}
-                    </p>
-                  )}
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {new Date(
-                      item.tanggal || item.created_at,
-                    ).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-                <StatusBadge status={item.status} />
-              </div>
-              <p className="text-sm text-slate-700 mb-4 line-clamp-2">
-                {item.uraian}
-              </p>
-
-              {item.status === "menunggu" && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleApprove(item.id, true)}
-                    className="flex-1 bg-emerald-50 text-emerald-600 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-100"
-                  >
-                    Setujui
-                  </button>
-                  <button
-                    onClick={() => handleApprove(item.id, false)}
-                    className="flex-1 bg-rose-50 text-rose-600 py-2 rounded-xl text-sm font-semibold hover:bg-rose-100"
-                  >
-                    Tolak
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      <BottomNav />
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
 
-// Komponen Pendukung agar kode rapi
-function StatCard({ icon: Icon, label, value, color }) {
-  const colors = {
-    blue: { bg: "bg-blue-50", icon: "text-blue-600", value: "text-blue-700" },
-    emerald: {
-      bg: "bg-emerald-50",
-      icon: "text-emerald-600",
-      value: "text-emerald-700",
-    },
-    amber: {
-      bg: "bg-amber-50",
-      icon: "text-amber-600",
-      value: "text-amber-700",
-    },
-    purple: {
-      bg: "bg-purple-50",
-      icon: "text-purple-600",
-      value: "text-purple-700",
-    },
-  };
-  const c = colors[color];
+// Komponen pendukung
+function TombolTinjau({ onSetuju, onTolak }) {
   return (
-    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-      <div className={`inline-flex p-2.5 rounded-xl ${c.bg} mb-3`}>
-        <Icon size={20} className={c.icon} />
-      </div>
-      <p className={`text-2xl font-bold ${c.value}`}>{value}</p>
-      <p className="text-xs text-slate-500 mt-0.5 leading-tight">{label}</p>
+    <div className="mt-3.5 flex gap-2">
+      <button
+        onClick={onSetuju}
+        className="h-9 flex-1 rounded-lg text-sm font-semibold text-white transition hover:brightness-110"
+        style={{ backgroundColor: WARNA.hijau }}
+      >
+        Setujui
+      </button>
+      <button
+        onClick={onTolak}
+        className="h-9 flex-1 rounded-lg border text-sm font-semibold transition hover:bg-[#a63d2f]/10"
+        style={{ color: WARNA.merah, borderColor: `${WARNA.merah}59` }}
+      >
+        Tolak
+      </button>
     </div>
   );
 }
 
 function StatusBadge({ status }) {
-  const styles = {
-    menunggu: "bg-amber-100 text-amber-700",
-    disetujui: "bg-emerald-100 text-emerald-700",
-    ditolak: "bg-rose-100 text-rose-700",
+  const peta = {
+    menunggu: { label: "Menunggu", warna: WARNA.biru },
+    disetujui: { label: "Disetujui", warna: WARNA.hijau },
+    ditolak: { label: "Ditolak", warna: WARNA.merah },
   };
+  const st = peta[status] || { label: status, warna: WARNA.tinta };
   return (
     <span
-      className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase ${styles[status]}`}
+      className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+      style={gayaChip(st.warna)}
     >
-      {status}
+      {st.label}
     </span>
   );
 }
 
-function EmptyState({ message }) {
+function Kosong({ pesan }) {
   return (
-    <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
-      <AlertTriangle className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-      <p className="text-slate-500">{message}</p>
+    <div className="rounded-xl border border-dashed border-[#14213d]/25 bg-white/60 px-6 py-10 text-center text-sm text-[#14213d]/65">
+      {pesan}
     </div>
   );
 }

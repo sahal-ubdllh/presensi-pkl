@@ -1,12 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Users, FileText, TrendingUp, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { supabase } from "../lib/supabase";
 import { hitungStatistik, rentangBulan } from "../utils/statistikPeserta";
 import toast from "react-hot-toast";
-import BottomNav from "../components/BottomNav";
+import DashboardLayout from "../components/DashboardLayout";
+import { FONT, TINTA, WARNA, LATAR_KONTUR, INPUT_CLS } from "../utils/tema";
 
 // Ambil semua baris (Supabase membatasi 1000 baris per permintaan)
 const fetchAll = async (buildQuery) => {
@@ -22,11 +23,7 @@ const fetchAll = async (buildQuery) => {
 };
 
 const warna = (persen) =>
-  persen >= 80
-    ? { bar: "bg-emerald-500", teks: "text-emerald-600" }
-    : persen >= 60
-      ? { bar: "bg-amber-500", teks: "text-amber-600" }
-      : { bar: "bg-rose-500", teks: "text-rose-600" };
+  persen >= 80 ? WARNA.hijau : persen >= 60 ? WARNA.ochre : WARNA.merah;
 
 export default function StatistikPeserta() {
   const sekarang = new Date();
@@ -103,149 +100,183 @@ export default function StatistikPeserta() {
     return hasil;
   }, [data, cari, urut]);
 
+  const ringkasan = data
+    ? [
+        ["Peserta", data.ringkasan.totalPeserta],
+        ["Rata-rata hadir", `${data.ringkasan.rataKehadiran}%`],
+        ["Kegiatan menunggu", data.ringkasan.kegiatanMenunggu],
+      ]
+    : [];
+
   return (
-    <div className="min-h-screen bg-slate-50 p-5 pb-24">
-      <h1 className="text-2xl font-bold text-slate-900">Statistik Peserta</h1>
-      <p className="text-sm text-slate-500 mt-0.5">Kehadiran dan kegiatan tiap peserta PKL</p>
-
-      {/* Pemilih bulan */}
-      <div className="flex items-center justify-between bg-white rounded-2xl border border-slate-100 shadow-sm px-2 py-2 mt-5">
-        <button onClick={() => geser(-1)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Bulan sebelumnya">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <span className="font-semibold text-slate-800 capitalize">{label}</span>
-        <button
-          onClick={() => geser(1)}
-          disabled={bulanIni}
-          className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-          aria-label="Bulan berikutnya"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
-
-      {loading || !data ? (
-        <div className="p-10 text-center text-slate-500">Memuat statistik...</div>
-      ) : (
-        <>
-          {/* Ringkasan */}
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <Ringkas ikon={Users} nilai={data.ringkasan.totalPeserta} label="Peserta" kelas="bg-blue-50 text-blue-600" />
-            <Ringkas ikon={TrendingUp} nilai={`${data.ringkasan.rataKehadiran}%`} label="Rata-rata hadir" kelas="bg-emerald-50 text-emerald-600" />
-            <Ringkas ikon={FileText} nilai={data.ringkasan.kegiatanMenunggu} label="Kegiatan menunggu" kelas="bg-amber-50 text-amber-600" />
-          </div>
-          <p className="text-xs text-slate-400 mt-2">
-            Hari kerja (Senin-Jumat) dihitung sejak presensi pertama tiap peserta; libur nasional
-            tidak dikurangi. Presensi manual yang belum disetujui belum dihitung hadir.
-          </p>
-
-          {/* Cari & urut */}
-          <div className="flex gap-2 mt-4">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                value={cari}
-                onChange={(e) => setCari(e.target.value)}
-                placeholder="Cari nama atau instansi..."
-                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-sm"
-              />
+    <DashboardLayout className="bg-[#f3efe6]">
+      <div style={{ ...FONT, color: TINTA }}>
+        <header style={LATAR_KONTUR} className="pb-12 pt-10">
+          <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 sm:px-8 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="font-mono text-xs tracking-wide text-[#2b4c7e]">Monitoring PKL</p>
+              <h1 className="mt-1.5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                Statistik peserta
+              </h1>
+              <p className="mt-2 text-[15px] text-[#14213d]/70">
+                Kehadiran dan kegiatan tiap peserta PKL.
+              </p>
             </div>
-            <select
-              value={urut}
-              onChange={(e) => setUrut(e.target.value)}
-              className="bg-white border border-slate-200 rounded-xl px-3 text-sm"
-            >
-              <option value="nama">Urut nama</option>
-              <option value="terendah">Kehadiran terendah</option>
-            </select>
-          </div>
 
-          {/* Daftar peserta */}
-          {daftar.length === 0 ? (
-            <div className="text-center text-slate-500 py-12 border border-dashed border-slate-200 rounded-2xl mt-4 bg-white">
-              {data.daftar.length === 0 ? "Belum ada peserta" : "Peserta tidak ditemukan"}
+            {/* Pemilih bulan */}
+            <div className="flex w-full items-center justify-between rounded-lg border border-[#14213d]/15 bg-white/80 p-1 backdrop-blur-sm md:w-64">
+              <button
+                onClick={() => geser(-1)}
+                className="rounded-md p-2 text-[#14213d]/70 hover:bg-[#14213d]/10"
+                aria-label="Bulan sebelumnya"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <span className="text-sm font-semibold capitalize">{label}</span>
+              <button
+                onClick={() => geser(1)}
+                disabled={bulanIni}
+                className="rounded-md p-2 text-[#14213d]/70 hover:bg-[#14213d]/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                aria-label="Bulan berikutnya"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="mx-auto max-w-6xl px-5 pb-28 pt-6 sm:px-8">
+          {loading || !data ? (
+            <div className="flex justify-center py-20">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
             </div>
           ) : (
-            <div className="space-y-3 mt-4">
-              {daftar.map((p) => {
-                const w = warna(p.persen);
-                return (
-                  <div key={p.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 truncate">{p.nama_lengkap || "-"}</p>
-                        <p className="text-xs text-slate-400 truncate">
-                          {[p.jenis_peserta, p.asal_instansi].filter(Boolean).join(" • ") || "-"}
-                        </p>
-                      </div>
-                      {p.belumMulai ? (
-                        <span className="text-xs font-medium text-slate-400 bg-slate-100 rounded-full px-2.5 py-1 whitespace-nowrap">
-                          Belum mulai
-                        </span>
-                      ) : (
-                        <span className={`text-lg font-bold ${w.teks}`}>{p.persen}%</span>
-                      )}
-                    </div>
-
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden mt-3">
-                      <div className={`h-full rounded-full ${w.bar}`} style={{ width: `${p.persen}%` }} />
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-1.5">
-                      {p.mulai
-                        ? `Mulai presensi ${format(new Date(p.mulai), "dd MMM yyyy", { locale: localeId })}${
-                            p.belumMulai
-                              ? " (setelah bulan ini)"
-                              : ` • ${p.hariKerja} hari kerja${p.terlambat > 0 ? ` • ${p.terlambat}x terlambat` : ""}`
-                          }`
-                        : "Belum pernah presensi"}
-                    </p>
-
-                    <div className="grid grid-cols-4 gap-2 mt-3 text-center">
-                      <Mini nilai={p.hadir} label="Hadir" kelas="text-emerald-600" />
-                      <Mini nilai={p.izin} label="Izin" kelas="text-amber-600" />
-                      <Mini nilai={p.sakit} label="Sakit" kelas="text-sky-600" />
-                      <Mini nilai={p.tidakHadir} label="Tidak hadir" kelas="text-rose-600" />
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">Kegiatan: {p.kegiatan.total}</span>
-                      <span className="text-emerald-600">{p.kegiatan.disetujui} disetujui</span>
-                      <span className="text-amber-600">{p.kegiatan.menunggu} menunggu</span>
-                      <span className="text-rose-600">{p.kegiatan.ditolak} ditolak</span>
-                      <span className="ml-auto">
-                        Terakhir hadir:{" "}
-                        {p.terakhir ? format(new Date(p.terakhir), "dd MMM", { locale: localeId }) : "-"}
-                      </span>
-                    </div>
+            <>
+              {/* Ringkasan */}
+              <dl className="grid grid-cols-3 divide-x divide-[#14213d]/10 rounded-xl border border-[#14213d]/10 bg-white py-5">
+                {ringkasan.map(([label, nilai]) => (
+                  <div key={label} className="px-5">
+                    <dd className="font-mono text-3xl font-semibold tabular-nums leading-none sm:text-4xl">
+                      {nilai}
+                    </dd>
+                    <dt className="mt-2 text-xs text-[#14213d]/65">{label}</dt>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </dl>
+              <p className="mt-2.5 text-xs leading-relaxed text-[#14213d]/55">
+                Hari kerja (Senin-Jumat) dihitung sejak presensi pertama tiap peserta; libur nasional
+                tidak dikurangi. Presensi manual yang belum disetujui belum dihitung hadir.
+              </p>
+
+              {/* Cari & urut */}
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#14213d]/40" />
+                  <input
+                    value={cari}
+                    onChange={(e) => setCari(e.target.value)}
+                    placeholder="Cari nama atau instansi..."
+                    className={`${INPUT_CLS} h-11 pl-10 text-sm`}
+                  />
+                </div>
+                <select
+                  value={urut}
+                  onChange={(e) => setUrut(e.target.value)}
+                  className={`${INPUT_CLS} h-11 text-sm sm:w-56`}
+                >
+                  <option value="nama">Urut nama</option>
+                  <option value="terendah">Kehadiran terendah</option>
+                </select>
+              </div>
+
+              {/* Daftar peserta */}
+              {daftar.length === 0 ? (
+                <div className="mt-4 rounded-xl border border-dashed border-[#14213d]/25 bg-white/60 px-6 py-12 text-center text-sm text-[#14213d]/65">
+                  {data.daftar.length === 0 ? "Belum ada peserta" : "Peserta tidak ditemukan"}
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {daftar.map((p) => {
+                    const w = warna(p.persen);
+                    return (
+                      <article
+                        key={p.id}
+                        className="rounded-xl border border-[#14213d]/10 bg-white p-4 sm:p-5"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">{p.nama_lengkap || "-"}</p>
+                            <p className="mt-0.5 truncate text-xs text-[#14213d]/60">
+                              {[p.jenis_peserta, p.asal_instansi].filter(Boolean).join(" · ") || "-"}
+                            </p>
+                          </div>
+                          {p.belumMulai ? (
+                            <span className="shrink-0 whitespace-nowrap rounded-full bg-[#14213d]/[0.07] px-2.5 py-1 text-[11px] font-semibold text-[#14213d]/60">
+                              Belum mulai
+                            </span>
+                          ) : (
+                            <span
+                              className="shrink-0 font-mono text-2xl font-semibold tabular-nums leading-none"
+                              style={{ color: w }}
+                            >
+                              {p.persen}%
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-3.5 h-1.5 overflow-hidden rounded-full bg-[#14213d]/10">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${p.persen}%`, backgroundColor: w }}
+                          />
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-[#14213d]/55">
+                          {p.mulai
+                            ? `Mulai presensi ${format(new Date(p.mulai), "dd MMM yyyy", { locale: localeId })}${
+                                p.belumMulai
+                                  ? " (setelah bulan ini)"
+                                  : ` · ${p.hariKerja} hari kerja${p.terlambat > 0 ? ` · ${p.terlambat}x terlambat` : ""}`
+                              }`
+                            : "Belum pernah presensi"}
+                        </p>
+
+                        <dl className="mt-4 grid grid-cols-4 divide-x divide-[#14213d]/10 border-y border-[#14213d]/10 py-3">
+                          <Mini nilai={p.hadir} label="Hadir" warna={WARNA.tinta} awal />
+                          <Mini nilai={p.izin} label="Izin" warna={WARNA.ochre} />
+                          <Mini nilai={p.sakit} label="Sakit" warna={WARNA.biru} />
+                          <Mini nilai={p.tidakHadir} label="Tidak hadir" warna={WARNA.merah} />
+                        </dl>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#14213d]/60">
+                          <span className="font-semibold text-[#14213d]">Kegiatan {p.kegiatan.total}</span>
+                          <span style={{ color: WARNA.hijau }}>{p.kegiatan.disetujui} disetujui</span>
+                          <span style={{ color: WARNA.biru }}>{p.kegiatan.menunggu} menunggu</span>
+                          <span style={{ color: WARNA.merah }}>{p.kegiatan.ditolak} ditolak</span>
+                          <span className="ml-auto font-mono">
+                            Terakhir hadir{" "}
+                            {p.terakhir ? format(new Date(p.terakhir), "dd MMM", { locale: localeId }) : "-"}
+                          </span>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
-      <BottomNav />
-    </div>
-  );
-}
-
-function Ringkas({ ikon: Ikon, nilai, label, kelas }) {
-  return (
-    <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${kelas}`}>
-        <Ikon className="w-4 h-4" />
+        </div>
       </div>
-      <p className="text-xl font-bold text-slate-900">{nilai}</p>
-      <p className="text-[11px] text-slate-500 leading-tight">{label}</p>
-    </div>
+    </DashboardLayout>
   );
 }
 
-function Mini({ nilai, label, kelas }) {
+function Mini({ nilai, label, warna: w, awal }) {
   return (
-    <div className="bg-slate-50 rounded-xl py-2">
-      <p className={`text-base font-bold ${kelas}`}>{nilai}</p>
-      <p className="text-[10px] text-slate-500">{label}</p>
+    <div className={awal ? "pr-2 text-center" : "px-2 text-center"}>
+      <dd className="font-mono text-xl font-semibold tabular-nums leading-none" style={{ color: w }}>
+        {nilai}
+      </dd>
+      <dt className="mt-1.5 text-[10px] text-[#14213d]/60">{label}</dt>
     </div>
   );
 }
