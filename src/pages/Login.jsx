@@ -1,3 +1,4 @@
+import { MEREK } from "../utils/merek";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -24,6 +25,19 @@ const LANGKAH = [
   ["03", "Ditinjau oleh pembimbing"],
 ];
 
+// Pesan dari Supabase berbahasa Inggris dan bisa membocorkan teknis,
+// jadi diterjemahkan. Sengaja tidak membedakan "email salah" dan "password
+// salah" agar orang luar tidak bisa menebak email yang terdaftar.
+function pesanLogin(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  if (msg.includes("invalid login credentials")) return "Email atau password salah";
+  if (msg.includes("email not confirmed")) return "Email belum dikonfirmasi. Hubungi admin.";
+  if (msg.includes("banned") || msg.includes("not allowed")) return "Akun tidak dapat digunakan. Hubungi admin.";
+  if (msg.includes("rate limit") || msg.includes("too many")) return "Terlalu banyak percobaan. Coba lagi beberapa menit lagi.";
+  if (msg.includes("failed to fetch") || msg.includes("network")) return "Tidak bisa terhubung ke server. Periksa koneksi internet.";
+  return "Email atau password salah";
+}
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,7 +58,7 @@ export default function Login() {
       toast.success("Selamat datang kembali!");
       navigate("/");
     } catch (error) {
-      toast.error(error.message || "Email atau password salah");
+      toast.error(pesanLogin(error));
     } finally {
       setIsLoading(false);
     }
@@ -75,12 +89,13 @@ export default function Login() {
         </div>
 
         <div className="mx-auto mt-8 w-full max-w-[22rem] lg:mx-0 lg:mt-0 lg:max-w-xl">
-          <h1 className="text-[26px] font-bold leading-[1.12] tracking-tight sm:text-3xl lg:text-5xl">
-            Presensi dan
-            <br />
-            Monitoring PKL
+          <h1 className="text-5xl font-extrabold leading-none tracking-tight sm:text-6xl lg:text-7xl">
+            {MEREK.nama}
           </h1>
-          <p className="mt-3 hidden max-w-md text-base leading-relaxed text-[#14213d]/75 lg:block">
+          <p className="mt-2 text-lg font-medium text-[#2b4c7e] lg:text-xl">
+            {MEREK.keterangan}
+          </p>
+          <p className="mt-4 hidden max-w-md text-base leading-relaxed text-[#14213d]/75 lg:block">
             Catat kehadiran dan logbook harian peserta praktik kerja lapangan,
             ditinjau langsung oleh pembimbing.
           </p>
@@ -105,7 +120,7 @@ export default function Login() {
       {/* ── Sisi formulir ── */}
       <main className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10 lg:min-h-screen lg:px-16">
         <div className="w-full max-w-[22rem]">
-          <h2 className="text-2xl font-bold tracking-tight">Masuk</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Masuk ke {MEREK.nama}</h2>
           <p className="mt-1.5 text-[15px] text-slate-600">
             Gunakan email dan password dari admin.
           </p>

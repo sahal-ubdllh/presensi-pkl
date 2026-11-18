@@ -114,7 +114,7 @@ export default function StatistikPeserta() {
         <header style={LATAR_KONTUR} className="pb-12 pt-10">
           <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 sm:px-8 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="font-mono text-xs tracking-wide text-[#2b4c7e]">Monitoring PKL</p>
+              <p className="font-mono text-xs tracking-wide text-[#2b4c7e]">Sigap</p>
               <h1 className="mt-1.5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
                 Statistik peserta
               </h1>

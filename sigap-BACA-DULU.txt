@@ -1,0 +1,4 @@
+Nama aplikasi: SIGAP. Salin file ke proyek dengan struktur folder sama, lalu jalankan ulang npm run dev (Ctrl+F5).
+Ganti nama di kemudian hari: cukup src/utils/merek.js dan <title> di index.html.
+Pakai di halaman lain: import { MEREK } from "../utils/merek"; lalu {MEREK.nama}.
+Catatan: Login.jsx dan index.html ditimpa penuh.

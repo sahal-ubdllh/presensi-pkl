@@ -52,6 +52,11 @@ function header(doc, title, profile, ringkasan) {
   doc.setFontSize(16);
   doc.setTextColor(15, 23, 42);
   doc.text(title, 14, 18);
+  doc.setFontSize(11);
+  doc.setTextColor(43, 76, 126);
+  doc.text("Sigap", 196, 18, { align: "right" });
+  doc.setFontSize(16);
+  doc.setTextColor(15, 23, 42);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -75,7 +80,7 @@ function footer(doc) {
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
     doc.text(`Halaman ${i} dari ${total}`, 196, 290, { align: "right" });
-    doc.text("Sistem Monitoring PKL", 14, 290);
+    doc.text("Sigap - Dinas Sosial Kabupaten Majalengka", 14, 290);
   }
 }
 

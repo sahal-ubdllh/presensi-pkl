@@ -39,6 +39,7 @@ export default function Presensi() {
     pulang: false,
   });
   const [masukStatus, setMasukStatus] = useState(null); // 'hadir' | 'terlambat'
+  const [izinHariIni, setIzinHariIni] = useState(null); // 'izin' | 'sakit' | null
   // Jam presensi (dibaca dari tabel konfigurasi; nilai bawaan bila belum diatur)
   const [jam, setJam] = useState({
     masukBatas: "07:30",
@@ -89,7 +90,7 @@ export default function Presensi() {
         const today = getTodayString();
         const { data: presensiHariIni, error: presensiError } = await supabase
           .from("presensi")
-          .select("jenis, status")
+          .select("jenis, status, kategori")
           .eq("user_id", profile.id)
           .eq("tanggal", today);
 
@@ -98,6 +99,11 @@ export default function Presensi() {
         const masuk = presensiHariIni.some((p) => p.jenis === "masuk");
         const pulang = presensiHariIni.some((p) => p.jenis === "pulang");
         setTodayPresensi({ masuk, pulang });
+        // Pengajuan izin/sakit (yang belum ditolak) menutup presensi hari ini
+        const pengajuan = presensiHariIni.find(
+          (p) => (p.kategori === "izin" || p.kategori === "sakit") && p.status !== "ditolak",
+        );
+        setIzinHariIni(pengajuan ? pengajuan.kategori : null);
         const barisMasuk = presensiHariIni.find((p) => p.jenis === "masuk");
         setMasukStatus(barisMasuk?.status || null);
 
@@ -139,6 +145,11 @@ export default function Presensi() {
     // Guard clause
     if (!profile) {
       toast.error("Profile belum ter-load. Silakan refresh.");
+      return;
+    }
+
+    if (izinHariIni) {
+      toast.error(`Hari ini Anda tercatat ${izinHariIni}, presensi tidak dapat dilakukan`);
       return;
     }
 
@@ -283,17 +294,24 @@ export default function Presensi() {
         {/* Jam presensi (mobile; di desktop ada di sisi kiri) */}
         <div className="lg:hidden">{infoJam}</div>
 
+        {izinHariIni && (
+          <p className="rounded-xl border border-[#b7791f]/30 bg-[#b7791f]/10 px-4 py-3 text-sm text-[#14213d]">
+            Hari ini Anda tercatat <strong>{izinHariIni}</strong>, jadi presensi masuk dan pulang
+            tidak dapat dilakukan.
+          </p>
+        )}
+
         {/* Tombol presensi */}
         <div className="grid grid-cols-2 gap-3">
           <TombolPresensi
             ikon={LogIn}
-            selesai={todayPresensi.masuk}
+            selesai={todayPresensi.masuk && !izinHariIni}
             judul="Presensi masuk"
             judulSelesai="Sudah masuk"
             ket={`Batas ${jam.masukBatas}`}
             ketSelesai={masukStatus === "terlambat" ? "Terlambat" : "Tepat waktu"}
             warnaKetSelesai={masukStatus === "terlambat" ? WARNA.ochre : WARNA.hijau}
-            nonaktif={todayPresensi.masuk || !userLocation}
+            nonaktif={todayPresensi.masuk || !userLocation || !!izinHariIni}
             onClick={() => handlePresensi("masuk")}
           />
           <TombolPresensi
@@ -304,7 +322,7 @@ export default function Presensi() {
             ket={`${jam.pulangMulai} - ${jam.pulangBatas}`}
             ketSelesai="Tercatat"
             warnaKetSelesai={WARNA.hijau}
-            nonaktif={todayPresensi.pulang || !todayPresensi.masuk || !userLocation}
+            nonaktif={todayPresensi.pulang || !todayPresensi.masuk || !userLocation || !!izinHariIni}
             onClick={() => handlePresensi("pulang")}
           />
         </div>

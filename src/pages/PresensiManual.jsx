@@ -10,7 +10,8 @@ import {
   CalendarOff,
   Thermometer,
 } from "lucide-react";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import "@fontsource-variable/public-sans";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -28,8 +29,6 @@ const LATAR_KONTUR = {
   backgroundSize: "cover",
   backgroundPosition: "right bottom",
 };
-
-const MAKS_HARI_MUNDUR_IZIN = 7; // harus sama dengan batas di izin-sakit.sql
 
 const JENIS = [
   {
@@ -72,7 +71,7 @@ const JENIS = [
 
 const LANGKAH = [
   ["01", "Pilih keperluan"],
-  ["02", "Isi tanggal, alasan, dan bukti"],
+  ["02", "Isi alasan dan bukti"],
   ["03", "Pembimbing meninjau pengajuan"],
 ];
 
@@ -92,17 +91,7 @@ export default function PresensiManual() {
 
   const jenis = JENIS.find((j) => j.id === formData.jenis);
   const izinSakit = formData.jenis === "izin" || formData.jenis === "sakit";
-  const hariIni = getTodayString();
-  const batasAwal = format(subDays(new Date(), MAKS_HARI_MUNDUR_IZIN), "yyyy-MM-dd");
-
-  const pilihJenis = (id) => {
-    setFormData((f) => {
-      const k = id === "izin" || id === "sakit";
-      // Izin/sakit tidak boleh bertanggal di luar 7 hari terakhir
-      const tanggal = k && f.tanggal < batasAwal ? hariIni : f.tanggal;
-      return { ...f, jenis: id, tanggal };
-    });
-  };
+  const pilihJenis = (id) => setFormData((f) => ({ ...f, jenis: id }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -144,13 +133,13 @@ export default function PresensiManual() {
       // Izin/sakit memakai fungsi sendiri (lihat izin-sakit.sql).
       const { error: dbError } = izinSakit
         ? await supabase.rpc("catat_izin_sakit", {
-            p_tanggal: formData.tanggal,
+            p_tanggal: getTodayString(),
             p_kategori: formData.jenis,
             p_alasan: formData.alasan,
             p_bukti_file: buktiUrl,
           })
         : await supabase.rpc("catat_presensi_manual", {
-            p_tanggal: formData.tanggal,
+            p_tanggal: getTodayString(),
             p_jenis: formData.jenis,
             p_alasan: formData.alasan,
             p_bukti_file: buktiUrl,
@@ -160,7 +149,7 @@ export default function PresensiManual() {
         console.error("DB error:", dbError);
         if (izinSakit && dbError.code === "PGRST202") {
           throw new Error(
-            "Fitur izin/sakit belum aktif di database. Minta admin menjalankan izin-sakit.sql.",
+            "Pengajuan izin/sakit belum bisa digunakan saat ini. Hubungi admin atau pengembang aplikasi.",
           );
         }
         throw dbError;
@@ -233,27 +222,48 @@ export default function PresensiManual() {
           <section>
             <h2 className="mb-2.5 flex items-baseline gap-3 text-sm font-semibold">
               <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">01</span>
-              Keperluan
+              Presensi
             </h2>
-            <div className="grid grid-cols-4 divide-x divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
-              {JENIS.map((j) => {
-                const aktif = formData.jenis === j.id;
+            <div className="grid grid-cols-2 divide-x divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
+              {[
+                { id: "masuk", label: "Masuk", ikon: LogIn },
+                { id: "pulang", label: "Pulang", ikon: LogOut },
+              ].map((t) => {
+                const aktif = (t.id === "pulang") === (formData.jenis === "pulang");
                 return (
                   <button
-                    key={j.id}
+                    key={t.id}
                     type="button"
-                    onClick={() => pilihJenis(j.id)}
+                    onClick={() => pilihJenis(t.id)}
                     aria-pressed={aktif}
-                    className={`flex flex-col items-center gap-2 px-1 py-3.5 text-[13px] font-medium transition-colors ${
+                    className={`flex items-center justify-center gap-2 px-1 py-3.5 text-sm font-medium transition-colors ${
                       aktif ? "bg-[#14213d] text-white" : "text-[#14213d] hover:bg-[#f3efe6]"
                     }`}
                   >
-                    <j.ikon className="h-5 w-5" strokeWidth={1.9} />
-                    {j.label}
+                    <t.ikon className="h-5 w-5" strokeWidth={1.9} />
+                    {t.label}
                   </button>
                 );
               })}
             </div>
+
+            {formData.jenis !== "pulang" && (
+              <div className="mt-4">
+                <label htmlFor="keperluan" className="mb-1.5 block text-sm font-semibold">
+                  Keterangan
+                </label>
+                <select
+                  id="keperluan"
+                  value={formData.jenis}
+                  onChange={(e) => pilihJenis(e.target.value)}
+                  className={`${inputCls} h-11`}
+                >
+                  <option value="masuk">Presensi di luar kantor</option>
+                  <option value="izin">Izin</option>
+                  <option value="sakit">Sakit</option>
+                </select>
+              </div>
+            )}
             <p className="mt-3 min-h-[2.5rem] text-[13px] leading-relaxed text-[#14213d]/70">
               {jenis.ket}
             </p>
@@ -266,24 +276,13 @@ export default function PresensiManual() {
             </h2>
 
             <div>
-              <label htmlFor="tanggal" className="mb-1.5 block text-sm font-semibold">
-                Tanggal
-              </label>
-              <input
-                id="tanggal"
-                type="date"
-                value={formData.tanggal}
-                max={hariIni}
-                min={izinSakit ? batasAwal : undefined}
-                onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-                className={`${inputCls} h-11`}
-                required
-              />
-              {izinSakit && (
-                <p className="mt-1.5 text-xs text-[#14213d]/55">
-                  Bisa untuk hari ini sampai {MAKS_HARI_MUNDUR_IZIN} hari ke belakang.
-                </p>
-              )}
+              <span className="mb-1.5 block text-sm font-semibold">Tanggal</span>
+              <p className="flex h-11 items-center rounded-lg border border-[#14213d]/15 bg-[#f3efe6] px-3.5 text-base">
+                {format(new Date(), "EEEE, d MMMM yyyy", { locale: localeId })}
+              </p>
+              <p className="mt-1.5 text-xs text-[#14213d]/55">
+                Presensi manual hanya untuk hari ini.
+              </p>
             </div>
 
             <div>

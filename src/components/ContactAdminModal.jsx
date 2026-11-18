@@ -14,16 +14,16 @@ const ISI = {
   password: {
     judul: 'Lupa password?',
     teks: 'Password direset oleh admin. Hubungi admin dan sebutkan email akun Anda, lalu admin akan memberikan password baru. Setelah masuk, segera simpan password baru Anda.',
-    subjek: 'Reset password akun Sistem Presensi PKL',
+    subjek: 'Reset password akun Sigap (Presensi dan Monitoring PKL)',
     pesan: (email) =>
-      `Halo Admin, saya lupa password akun Sistem Presensi PKL.${email ? ` Email akun saya: ${email}.` : ''} Mohon bantuan untuk mereset password saya. Terima kasih.`,
+      `Halo Admin, saya lupa password akun Sigap (Presensi dan Monitoring PKL).${email ? ` Email akun saya: ${email}.` : ''} Mohon bantuan untuk mereset password saya. Terima kasih.`,
   },
   akun: {
     judul: 'Belum punya akun?',
     teks: 'Akun dibuat oleh admin. Hubungi admin dan sebutkan nama lengkap, jenis peserta (siswa/mahasiswa), asal instansi, dan email aktif Anda.',
-    subjek: 'Permintaan akun Sistem Presensi PKL',
+    subjek: 'Permintaan akun Sigap (Presensi dan Monitoring PKL)',
     pesan: () =>
-      'Halo Admin, saya ingin meminta akun Sistem Presensi PKL.\nNama lengkap: \nJenis peserta (siswa/mahasiswa): \nAsal instansi: \nEmail aktif: ',
+      'Halo Admin, saya ingin meminta akun Sigap (Presensi dan Monitoring PKL).\nNama lengkap: \nJenis peserta (siswa/mahasiswa): \nAsal instansi: \nEmail aktif: ',
   },
 };
 
