@@ -1,19 +1,22 @@
-// Ekspor riwayat ke PDF. Seluruh proses berjalan di browser.
-// jsPDF dimuat hanya saat tombol Download ditekan (tidak memperberat halaman awal).
+// Ekspor riwayat ke PDF (A4, Times New Roman 12pt, berkop Dinas Sosial).
+// Seluruh proses berjalan di browser. jsPDF dimuat hanya saat tombol Download
+// ditekan (tidak memperberat halaman awal).
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import logoUrl from "../assets/logo-dinsos.png";
+import { MEREK } from "./merek";
 
 // Font bawaan PDF hanya mendukung karakter Latin. Ganti tanda baca "pintar" dan
 // buang emoji/karakter lain supaya teks tidak berubah menjadi simbol aneh.
 const clean = (value) =>
   String(value ?? "")
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2013\u2014]/g, "-")
-    .replace(/\u2026/g, "...")
-    .replace(/\u2022/g, "-")
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    .replace(/•/g, "-")
     .replace(/\r?\n/g, " ")
-    .replace(/[^\u0020-\u00FF]/g, "")
+    .replace(/[^ -ÿ]/g, "")
     .trim();
 
 const tgl = (d) => {
@@ -35,54 +38,141 @@ const safeName = (s) =>
   clean(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") ||
   "peserta";
 
-const BRAND = [37, 99, 235];
+// ---- Tata letak A4 (mm) ----
+const FONT = "times"; // Times New Roman (font bawaan PDF)
+const UKURAN = 12;
+const MARGIN = 20; // kiri/kanan
+const LEBAR = 210 - MARGIN * 2; // 170 mm
+const TENGAH = 105;
+
+// Logo dimuat sebagai data URL agar bisa disematkan ke PDF
+async function muatLogo() {
+  try {
+    const blob = await (await fetch(logoUrl)).blob();
+    return await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null; // tanpa logo bila gagal dimuat; PDF tetap jadi
+  }
+}
 
 async function newDoc() {
-  const [{ jsPDF }, autoTableModule] = await Promise.all([
+  const [{ jsPDF }, autoTableModule, logo] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
+    muatLogo(),
   ]);
   const autoTable = autoTableModule.default || autoTableModule.autoTable;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  return { doc, autoTable };
+  doc.setFont(FONT, "normal");
+  doc.setFontSize(UKURAN);
+  return { doc, autoTable, logo };
 }
 
-function header(doc, title, profile, ringkasan) {
-  doc.setFont("helvetica", "bold");
+// Kop surat + judul + identitas. Mengembalikan posisi Y awal tabel.
+function header(doc, logo, title, profile, ringkasan) {
+  // Logo di kiri, teks kop di tengah
+  if (logo) {
+    try {
+      doc.addImage(logo, "PNG", MARGIN, 11, 22, 22);
+    } catch {
+      /* lewati logo bila format tidak terbaca */
+    }
+  }
+  doc.setTextColor(0, 0, 0);
+  doc.setFont(FONT, "bold");
+  doc.setFontSize(UKURAN);
+  doc.text("PEMERINTAH KABUPATEN MAJALENGKA", TENGAH + 8, 17, { align: "center" });
   doc.setFontSize(16);
-  doc.setTextColor(15, 23, 42);
-  doc.text(title, 14, 18);
-  doc.setFontSize(11);
-  doc.setTextColor(43, 76, 126);
-  doc.text("Sigap", 196, 18, { align: "right" });
-  doc.setFontSize(16);
-  doc.setTextColor(15, 23, 42);
+  doc.text("DINAS SOSIAL", TENGAH + 8, 24, { align: "center" });
+  doc.setFont(FONT, "normal");
+  doc.setFontSize(UKURAN);
+  doc.text(`${MEREK.nama} - ${MEREK.keterangan}`, TENGAH + 8, 30.5, { align: "center" });
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(71, 85, 105);
+  // Garis kop (tebal di atas, tipis di bawah)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.9);
+  doc.line(MARGIN, 36, 210 - MARGIN, 36);
+  doc.setLineWidth(0.25);
+  doc.line(MARGIN, 37.4, 210 - MARGIN, 37.4);
+
+  // Judul dokumen
+  doc.setFont(FONT, "bold");
+  doc.setFontSize(UKURAN);
+  const judul = title.toUpperCase();
+  doc.text(judul, TENGAH, 47, { align: "center" });
+  const w = doc.getTextWidth(judul);
+  doc.setLineWidth(0.3);
+  doc.line(TENGAH - w / 2, 48.2, TENGAH + w / 2, 48.2);
+
+  // Identitas (label : nilai, titik dua sejajar)
+  doc.setFont(FONT, "normal");
   const baris = [
-    `Nama: ${clean(profile?.nama_lengkap) || "-"}`,
-    `Instansi: ${clean(profile?.asal_instansi) || "-"}`,
-    `Dicetak: ${format(new Date(), "dd MMMM yyyy, HH:mm", { locale: localeId })}`,
-    ringkasan,
+    ["Nama", clean(profile?.nama_lengkap) || "-"],
+    ["Instansi", clean(profile?.asal_instansi) || "-"],
+    ["Dicetak", format(new Date(), "dd MMMM yyyy, HH:mm", { locale: localeId })],
   ];
-  baris.forEach((t, i) => doc.text(clean(t), 14, 26 + i * 5.5));
-  doc.setDrawColor(226, 232, 240);
-  doc.line(14, 26 + baris.length * 5.5 - 2, 196, 26 + baris.length * 5.5 - 2);
-  return 26 + baris.length * 5.5 + 2; // posisi Y awal tabel
+  let y = 57;
+  baris.forEach(([label, nilai]) => {
+    doc.text(label, MARGIN, y);
+    doc.text(":", MARGIN + 24, y);
+    const potong = doc.splitTextToSize(nilai, LEBAR - 28);
+    doc.text(potong, MARGIN + 28, y);
+    y += 6 * potong.length;
+  });
+
+  // Ringkasan
+  doc.text("Ringkasan", MARGIN, y);
+  doc.text(":", MARGIN + 24, y);
+  const rk = doc.splitTextToSize(clean(ringkasan), LEBAR - 28);
+  doc.text(rk, MARGIN + 28, y);
+  y += 6 * rk.length;
+
+  return y + 3; // posisi Y awal tabel
 }
 
 function footer(doc) {
   const total = doc.getNumberOfPages();
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text(`Halaman ${i} dari ${total}`, 196, 290, { align: "right" });
-    doc.text("Sigap - Dinas Sosial Kabupaten Majalengka", 14, 290);
+    doc.setFont(FONT, "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN, 284, 210 - MARGIN, 284);
+    doc.text(`${MEREK.nama} - ${MEREK.instansi}`, MARGIN, 289);
+    doc.text(`Halaman ${i} dari ${total}`, 210 - MARGIN, 289, { align: "right" });
   }
 }
+
+// Gaya tabel bersama: bergaris, Times 12pt, kepala abu-abu muda
+const gayaTabel = {
+  theme: "grid",
+  styles: {
+    font: FONT,
+    fontSize: UKURAN,
+    cellPadding: { top: 2, bottom: 2, left: 2.2, right: 2.2 },
+    overflow: "linebreak",
+    valign: "middle",
+    textColor: [0, 0, 0],
+    lineColor: [0, 0, 0],
+    lineWidth: 0.2,
+  },
+  headStyles: {
+    font: FONT,
+    fontStyle: "bold",
+    fillColor: [226, 226, 226],
+    textColor: [0, 0, 0],
+    halign: "center",
+  },
+  margin: { top: 20, left: MARGIN, right: MARGIN, bottom: 20 },
+  tableWidth: LEBAR,
+};
 
 const labelPresensi = (r) => {
   if (r.status === "menunggu") return "Menunggu persetujuan";
@@ -96,7 +186,7 @@ const labelPresensi = (r) => {
 
 // ---------------- Presensi ----------------
 export async function buildPresensiPdf(profile, rows) {
-  const { doc, autoTable } = await newDoc();
+  const { doc, autoTable, logo } = await newDoc();
   const hadirRows = rows.filter(
     (r) => (r.status === "hadir" || r.status === "terlambat") && r.jenis === "masuk",
   );
@@ -108,12 +198,14 @@ export async function buildPresensiPdf(profile, rows) {
     new Set(rows.filter((r) => r.status === st && r.jenis === "masuk").map((r) => r.tanggal)).size;
   const startY = header(
     doc,
+    logo,
     "Riwayat Presensi",
     profile,
-    `Total catatan: ${rows.length}   |   Hari hadir: ${hadirHari}   |   Terlambat: ${terlambatHari}   |   Izin: ${hariUnik("izin")}   |   Sakit: ${hariUnik("sakit")}`,
+    `Total catatan ${rows.length}; hadir ${hadirHari} hari; terlambat ${terlambatHari} hari; izin ${hariUnik("izin")} hari; sakit ${hariUnik("sakit")} hari.`,
   );
 
   autoTable(doc, {
+    ...gayaTabel,
     startY,
     head: [["No", "Tanggal", "Jenis", "Jam", "Metode", "Status", "Keterangan"]],
     body: rows.map((r, i) => [
@@ -129,18 +221,15 @@ export async function buildPresensiPdf(profile, rows) {
           ? "Di area kantor"
           : "Di luar area",
     ]),
-    styles: { font: "helvetica", fontSize: 8.5, cellPadding: 2, overflow: "linebreak" },
-    headStyles: { fillColor: BRAND, textColor: 255 },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 10, halign: "center" },
       1: { cellWidth: 27 },
-      2: { cellWidth: 17 },
-      3: { cellWidth: 13 },
-      4: { cellWidth: 20 },
-      5: { cellWidth: 32 },
+      2: { cellWidth: 17, halign: "center" },
+      3: { cellWidth: 15, halign: "center" },
+      4: { cellWidth: 21, halign: "center" },
+      5: { cellWidth: 30 },
+      6: { cellWidth: "auto" },
     },
-    margin: { left: 14, right: 14, bottom: 16 },
   });
   footer(doc);
   return doc;
@@ -155,16 +244,18 @@ export async function downloadPresensiPdf(profile, rows) {
 const labelKegiatan = { disetujui: "Disetujui", menunggu: "Menunggu", ditolak: "Ditolak" };
 
 export async function buildKegiatanPdf(profile, rows) {
-  const { doc, autoTable } = await newDoc();
+  const { doc, autoTable, logo } = await newDoc();
   const hitung = (s) => rows.filter((r) => r.status === s).length;
   const startY = header(
     doc,
+    logo,
     "Riwayat Kegiatan",
     profile,
-    `Total: ${rows.length}   |   Disetujui: ${hitung("disetujui")}   |   Menunggu: ${hitung("menunggu")}   |   Ditolak: ${hitung("ditolak")}`,
+    `Total ${rows.length} kegiatan; disetujui ${hitung("disetujui")}; menunggu ${hitung("menunggu")}; ditolak ${hitung("ditolak")}.`,
   );
 
   autoTable(doc, {
+    ...gayaTabel,
     startY,
     head: [["No", "Tanggal", "Judul", "Uraian Kegiatan", "Status"]],
     body: rows.map((r, i) => [
@@ -174,17 +265,14 @@ export async function buildKegiatanPdf(profile, rows) {
       clean(r.uraian) || "-",
       labelKegiatan[r.status] || clean(r.status) || "-",
     ]),
-    styles: { font: "helvetica", fontSize: 8.5, cellPadding: 2, overflow: "linebreak", valign: "top" },
-    headStyles: { fillColor: BRAND, textColor: 255 },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
+    styles: { ...gayaTabel.styles, valign: "top" },
     columnStyles: {
       0: { cellWidth: 10, halign: "center" },
       1: { cellWidth: 27 },
-      2: { cellWidth: 38 },
+      2: { cellWidth: 36 },
       3: { cellWidth: "auto" },
-      4: { cellWidth: 22 },
+      4: { cellWidth: 26, halign: "center" },
     },
-    margin: { left: 14, right: 14, bottom: 16 },
   });
   footer(doc);
   return doc;

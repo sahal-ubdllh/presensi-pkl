@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, LogOut, CheckCircle2, ChevronRight } from "lucide-react";
+import { LogIn, LogOut, CheckCircle2, ChevronRight, FileEdit, History } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -10,7 +10,7 @@ import { getTodayString } from "../utils/dateUtils";
 import toast from "react-hot-toast";
 import L from "leaflet";
 import PageShell from "../components/PageShell";
-import { FONT, TINTA, WARNA } from "../utils/tema";
+import { FONT, TINTA, WARNA, SOFT } from "../utils/tema";
 
 // Fix default marker icon issue in Leaflet + React
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -195,32 +195,33 @@ export default function Presensi() {
   if (loading || !profile) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        className="flex min-h-screen items-center justify-center bg-[#f0f9ff]"
         style={{ ...FONT, color: TINTA }}
       >
         <div className="text-center">
-          <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
-          <p className="text-sm text-[#14213d]/65">Memuat data presensi...</p>
+          <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-[#0369a1] border-t-transparent" />
+          <p className="text-sm text-[#0c2d48]/65">Memuat data presensi...</p>
         </div>
       </div>
     );
   }
 
-  const warnaStatus = isInRadius ? WARNA.tinta : WARNA.merah;
+  const soft = isInRadius ? SOFT.hijau : SOFT.merah;
+  const warnaStatus = soft.fg;
 
   const infoJam = (
-    <dl className="divide-y divide-[#14213d]/10 border-y border-[#14213d]/10 text-[15px]">
-      <div className="flex gap-5 py-3">
-        <dt className="w-14 shrink-0 font-mono text-xs leading-6 text-[#2b4c7e]">Masuk</dt>
+    <dl className="space-y-2.5 text-[15px]">
+      <div className="flex items-start gap-4 rounded-2xl border border-primary-100 bg-white/90 px-4 py-3 shadow-kartu">
+        <dt className="mt-0.5 w-14 shrink-0 rounded-full bg-primary-100 px-2 py-0.5 text-center font-mono text-xs font-semibold text-primary-700">Masuk</dt>
         <dd>
           Tepat waktu sampai {jam.masukBatas}, setelah itu tercatat{" "}
-          <span className="font-semibold" style={{ color: WARNA.ochre }}>
+          <span className="rounded-md px-1.5 py-0.5 font-semibold" style={{ color: SOFT.kuning.fg, backgroundColor: SOFT.kuning.bg }}>
             terlambat
           </span>
         </dd>
       </div>
-      <div className="flex gap-5 py-3">
-        <dt className="w-14 shrink-0 font-mono text-xs leading-6 text-[#2b4c7e]">Pulang</dt>
+      <div className="flex items-start gap-4 rounded-2xl border border-primary-100 bg-white/90 px-4 py-3 shadow-kartu">
+        <dt className="mt-0.5 w-14 shrink-0 rounded-full bg-primary-100 px-2 py-0.5 text-center font-mono text-xs font-semibold text-primary-700">Pulang</dt>
         <dd>
           Pukul {jam.pulangMulai} sampai {jam.pulangBatas}
         </dd>
@@ -229,17 +230,17 @@ export default function Presensi() {
   );
 
   const statusLokasi = (
-    <div className="mt-6 max-w-sm rounded-xl border border-[#14213d]/10 bg-white/80 p-4 backdrop-blur-sm">
+    <div className="mt-6 max-w-sm rounded-2xl border p-4 shadow-kartu" style={{ backgroundColor: soft.bg, borderColor: soft.garis }}>
       <div className="flex items-center gap-2.5">
-        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: warnaStatus }} />
-        <p className="text-sm font-semibold">
+        <span className="h-2.5 w-2.5 rounded-full ring-4 ring-white/70" style={{ backgroundColor: warnaStatus }} />
+        <p className="text-sm font-semibold" style={{ color: warnaStatus }}>
           {isInRadius ? "Anda berada di area kantor" : "Anda di luar area kantor"}
         </p>
       </div>
-      <p className="mt-3 font-mono text-3xl font-semibold tabular-nums leading-none">
+      <p className="mt-3 font-mono text-3xl font-semibold tabular-nums leading-none text-[#0c2d48]">
         {distance !== null ? `${distance} m` : "..."}
       </p>
-      <p className="mt-1.5 text-xs text-[#14213d]/60">
+      <p className="mt-1.5 text-xs text-[#0c2d48]/70">
         dari kantor, radius presensi {radius} m
       </p>
     </div>
@@ -261,7 +262,7 @@ export default function Presensi() {
       <div className="space-y-6">
         {/* Peta */}
         {userLocation && officeLocation ? (
-          <div className="relative z-0 h-64 overflow-hidden rounded-xl border border-[#14213d]/15 lg:h-80">
+          <div className="relative z-0 h-64 overflow-hidden rounded-2xl border-2 border-white shadow-kartu ring-1 ring-primary-200 lg:h-80">
             <MapContainer
               center={userLocation}
               zoom={16}
@@ -286,7 +287,7 @@ export default function Presensi() {
             </MapContainer>
           </div>
         ) : (
-          <p className="rounded-xl border border-dashed border-[#14213d]/30 px-4 py-6 text-center text-sm text-[#14213d]/70">
+          <p className="rounded-2xl border border-dashed border-primary-300 bg-primary-50 px-4 py-6 text-center text-sm text-primary-800">
             Lokasi belum tersedia. Aktifkan GPS dan izinkan akses lokasi, lalu muat ulang halaman.
           </p>
         )}
@@ -295,7 +296,7 @@ export default function Presensi() {
         <div className="lg:hidden">{infoJam}</div>
 
         {izinHariIni && (
-          <p className="rounded-xl border border-[#b7791f]/30 bg-[#b7791f]/10 px-4 py-3 text-sm text-[#14213d]">
+          <p className="rounded-2xl border px-4 py-3 text-sm text-[#0c2d48]" style={{ backgroundColor: SOFT.kuning.bg, borderColor: SOFT.kuning.garis }}>
             Hari ini Anda tercatat <strong>{izinHariIni}</strong>, jadi presensi masuk dan pulang
             tidak dapat dilakukan.
           </p>
@@ -305,6 +306,7 @@ export default function Presensi() {
         <div className="grid grid-cols-2 gap-3">
           <TombolPresensi
             ikon={LogIn}
+            warna={SOFT.hijau}
             selesai={todayPresensi.masuk && !izinHariIni}
             judul="Presensi masuk"
             judulSelesai="Sudah masuk"
@@ -316,6 +318,7 @@ export default function Presensi() {
           />
           <TombolPresensi
             ikon={LogOut}
+            warna={SOFT.biru}
             selesai={todayPresensi.pulang}
             judul="Presensi pulang"
             judulSelesai="Sudah pulang"
@@ -328,15 +331,19 @@ export default function Presensi() {
         </div>
 
         {/* Tautan */}
-        <div className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/15 bg-white">
+        <div className="space-y-2.5">
           <TautanBaris
             judul="Presensi manual"
             ket="Di luar kantor, izin, atau sakit"
+            ikon={FileEdit}
+            warna={SOFT.kuning}
             onClick={() => navigate("/presensi-manual")}
           />
           <TautanBaris
             judul="Riwayat presensi"
             ket="Lihat catatan dan unduh PDF"
+            ikon={History}
+            warna={SOFT.biru}
             onClick={() => navigate("/riwayat-presensi")}
           />
         </div>
@@ -347,6 +354,7 @@ export default function Presensi() {
 
 function TombolPresensi({
   ikon: Ikon,
+  warna,
   selesai,
   judul,
   judulSelesai,
@@ -357,24 +365,30 @@ function TombolPresensi({
   onClick,
 }) {
   const gaya = selesai
-    ? "border border-[#14213d]/20 bg-[#14213d]/[0.05] text-[#14213d] cursor-default"
+    ? "border cursor-default"
     : nonaktif
-      ? "border border-[#14213d]/10 bg-white text-[#14213d]/35 cursor-not-allowed"
-      : "bg-[#14213d] text-white hover:bg-[#1d2d52]";
+      ? "border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+      : "text-white shadow-[0_8px_18px_-8px_rgba(12,45,72,0.5)] hover:brightness-110 active:scale-[0.98]";
+  const style = selesai
+    ? { backgroundColor: SOFT.hijau.bg, borderColor: SOFT.hijau.garis, color: "#0c2d48" }
+    : nonaktif
+      ? undefined
+      : { backgroundColor: warna.fg };
   return (
     <button
       onClick={onClick}
       disabled={nonaktif}
-      className={`flex flex-col items-center justify-center gap-2 rounded-xl px-3 py-5 transition-colors ${gaya}`}
+      style={style}
+      className={`flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 transition ${gaya}`}
     >
       {selesai ? (
-        <CheckCircle2 className="h-6 w-6" strokeWidth={1.8} style={{ color: WARNA.hijau }} />
+        <CheckCircle2 className="h-7 w-7" strokeWidth={1.8} style={{ color: WARNA.hijau }} />
       ) : (
-        <Ikon className="h-6 w-6" strokeWidth={1.8} />
+        <Ikon className="h-7 w-7" strokeWidth={1.8} />
       )}
-      <span className="text-sm font-semibold">{selesai ? judulSelesai : judul}</span>
+      <span className="text-sm font-bold">{selesai ? judulSelesai : judul}</span>
       <span
-        className={`font-mono text-[11px] ${selesai ? "font-semibold" : "opacity-70"}`}
+        className={`font-mono text-[11px] ${selesai ? "font-semibold" : "opacity-80"}`}
         style={selesai ? { color: warnaKetSelesai } : undefined}
       >
         {selesai ? ketSelesai : ket}
@@ -383,17 +397,20 @@ function TombolPresensi({
   );
 }
 
-function TautanBaris({ judul, ket, onClick }) {
+function TautanBaris({ judul, ket, ikon: Ikon, warna, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#f3efe6]"
+      className="flex w-full items-center gap-3.5 rounded-2xl border border-primary-100 bg-white px-4 py-3.5 text-left shadow-kartu transition hover:-translate-y-0.5 hover:border-primary-200 active:scale-[0.99]"
     >
-      <span>
-        <span className="block text-sm font-semibold">{judul}</span>
-        <span className="block text-xs text-[#14213d]/60">{ket}</span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: warna.bg, color: warna.fg }}>
+        <Ikon className="h-5 w-5" strokeWidth={1.9} />
       </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-[#14213d]/40" />
+      <span className="flex-1">
+        <span className="block text-sm font-semibold">{judul}</span>
+        <span className="block text-xs text-[#0c2d48]/65">{ket}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-primary-400" />
     </button>
   );
 }

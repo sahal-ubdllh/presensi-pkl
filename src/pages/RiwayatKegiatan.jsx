@@ -66,7 +66,7 @@ export default function RiwayatKegiatan() {
         <button
           onClick={handleDownload}
           disabled={downloading || loading || kegiatan.length === 0}
-          className="flex items-center gap-1.5 rounded-lg bg-[#14213d] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#1d2d52] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full bg-primary-700 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(3,105,161,0.25)] transition hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           <Download className="h-4 w-4" />
           {downloading ? "Menyiapkan..." : "Unduh PDF"}
@@ -79,14 +79,14 @@ export default function RiwayatKegiatan() {
           <RingkasanAngka
             memuat={loading}
             data={[
-              ["Disetujui", hitung("disetujui")],
-              ["Menunggu", hitung("menunggu")],
-              ["Ditolak", hitung("ditolak")],
+              ["Disetujui", hitung("disetujui"), WARNA.hijau],
+              ["Menunggu", hitung("menunggu"), WARNA.biru],
+              ["Ditolak", hitung("ditolak"), WARNA.merah],
             ]}
           />
           <button
             onClick={() => navigate("/logbook")}
-            className="mt-6 hidden items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline lg:inline-flex"
+            className="mt-6 hidden items-center gap-1.5 text-sm font-semibold text-[#0369a1] hover:underline lg:inline-flex"
           >
             <Plus className="h-4 w-4" />
             Buat kegiatan baru
@@ -96,33 +96,34 @@ export default function RiwayatKegiatan() {
       lebar="lg:max-w-lg"
     >
       {loading ? (
-        <div className="flex justify-center rounded-xl border border-[#14213d]/10 bg-white py-14">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+        <div className="flex justify-center rounded-2xl border border-primary-100 bg-white py-14 shadow-kartu">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0369a1] border-t-transparent" />
         </div>
       ) : kegiatan.length === 0 ? (
-        <div className="rounded-xl border border-[#14213d]/10 bg-white px-6 py-12 text-center">
-          <p className="text-[15px] text-[#14213d]/70">Belum ada riwayat kegiatan.</p>
+        <div className="rounded-2xl border border-dashed border-primary-200 bg-primary-50/60 px-6 py-12 text-center">
+          <p className="text-[15px] text-[#0c2d48]/70">Belum ada riwayat kegiatan.</p>
           <button
             onClick={() => navigate("/logbook")}
-            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0369a1] hover:underline"
           >
             <Plus className="h-4 w-4" />
             Buat kegiatan
           </button>
         </div>
       ) : (
-        <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
+        <ul className="space-y-2.5">
           {kegiatan.map((item) => {
             const st = STATUS[item.status] || { label: item.status, warna: WARNA.tinta };
             return (
               <li key={item.id}>
                 <button
                   onClick={() => navigate(`/kegiatan/${item.id}`)}
-                  className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[#f3efe6] sm:px-5"
+                  style={{ borderLeftColor: st.warna }}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-l-4 border-primary-100 bg-white px-4 py-4 text-left shadow-kartu transition hover:-translate-y-0.5 hover:border-primary-200 active:scale-[0.99] sm:px-5"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-mono text-xs text-[#2b4c7e]">{formatDate(item.tanggal)}</p>
+                      <p className="font-mono text-xs font-medium text-primary-700">{formatDate(item.tanggal)}</p>
                       <span
                         className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
                         style={gayaChip(st.warna)}
@@ -132,7 +133,7 @@ export default function RiwayatKegiatan() {
                     </div>
                     <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed">{item.uraian}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-[#14213d]/40" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-primary-400" />
                 </button>
               </li>
             );

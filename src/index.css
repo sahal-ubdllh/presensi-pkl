@@ -2,17 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-white text-[#0c2d48] antialiased;
+  }
+  ::selection {
+    background: #bae6fd;
+  }
+}
+
 @layer components {
   .input-field {
     @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl
            text-slate-700 placeholder-slate-400
-           focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           focus:ring-4 focus:ring-primary-600/15 focus:border-primary-600
            outline-none transition-all shadow-sm;
   }
 
   .btn-primary {
-    @apply w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold
-           hover:bg-blue-700 active:bg-blue-800 transition-all
+    @apply w-full bg-primary-700 text-white py-3.5 rounded-xl font-semibold
+           hover:bg-primary-600 active:bg-primary-800 transition-all
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 }

@@ -5,19 +5,15 @@ import toast from "react-hot-toast";
 import "@fontsource-variable/public-sans";
 import { useAuth } from "../context/AuthContext";
 import ContactAdminModal from "../components/ContactAdminModal";
-import konturUrl from "../assets/kontur.svg";
+import { FONT, TINTA, LATAR_KONTUR, PITA_LOGO } from "../utils/tema";
 import { Eye, EyeOff } from "lucide-react";
 
-// Warna dan font khusus halaman ini (kertas hangat + tinta biru, mengacu pada peta topografi)
-const KERTAS = "#f3efe6";
-const TINTA = "#14213d";
-const FONT = { fontFamily: '"Public Sans Variable", system-ui, sans-serif' };
-const LATAR_KONTUR = {
-  backgroundColor: KERTAS,
-  backgroundImage: `url(${konturUrl})`,
-  backgroundSize: "cover",
-  backgroundPosition: "right bottom",
-};
+// Latar & teks lencana nomor: biru, hijau, kuning (selaras fungsi: presensi, logbook, tinjauan)
+const SOFT_LANGKAH = [
+  ["#e0f2fe", "#0369a1"],
+  ["#dcfce7", "#2e7d32"],
+  ["#fef9c3", "#a16207"],
+];
 
 const LANGKAH = [
   ["01", "Presensi di area kantor"],
@@ -74,45 +70,51 @@ export default function Login() {
         className="relative flex flex-col px-6 pb-7 pt-8 sm:px-10 lg:min-h-screen lg:justify-between lg:px-14 lg:py-12 xl:px-20"
         style={LATAR_KONTUR}
       >
+        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundImage: PITA_LOGO }} />
         <div className="mx-auto w-full max-w-[22rem] lg:mx-0 lg:max-w-none">
           <div className="flex items-center gap-4">
-            <img
-              src="/logo-dinsos.png"
-              alt="Logo Dinas Sosial"
-              className="h-12 w-auto lg:h-16"
-            />
-            <div className="border-l border-[#14213d]/20 pl-4 text-sm leading-snug lg:text-[15px]">
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-kartu ring-1 ring-primary-100 lg:h-20 lg:w-20">
+              <img
+                src="/logo-dinsos.png"
+                alt="Logo Dinas Sosial"
+                className="h-14 w-auto lg:h-[4.5rem]"
+              />
+            </span>
+            <div className="text-sm leading-snug lg:text-[15px]">
               <p className="font-semibold">Dinas Sosial</p>
-              <p className="text-[#14213d]/70">Kabupaten Majalengka</p>
+              <p className="text-[#0c2d48]/70">Kabupaten Majalengka</p>
             </div>
           </div>
         </div>
 
         <div className="mx-auto mt-8 w-full max-w-[22rem] lg:mx-0 lg:mt-0 lg:max-w-xl">
-          <h1 className="text-5xl font-extrabold leading-none tracking-tight sm:text-6xl lg:text-7xl">
+          <h1 className="text-5xl font-extrabold leading-none tracking-tight text-[#0c2d48] sm:text-6xl lg:text-7xl">
             {MEREK.nama}
           </h1>
-          <p className="mt-2 text-lg font-medium text-[#2b4c7e] lg:text-xl">
+          <p className="mt-2 text-lg font-semibold text-primary-700 lg:text-xl">
             {MEREK.keterangan}
           </p>
-          <p className="mt-4 hidden max-w-md text-base leading-relaxed text-[#14213d]/75 lg:block">
+          <p className="mt-4 hidden max-w-md text-base leading-relaxed text-[#0c2d48]/75 lg:block">
             Catat kehadiran dan logbook harian peserta praktik kerja lapangan,
             ditinjau langsung oleh pembimbing.
           </p>
 
-          <ol className="mt-10 hidden max-w-sm divide-y divide-[#14213d]/10 border-y border-[#14213d]/10 lg:block">
-            {LANGKAH.map(([no, teks]) => (
-              <li key={no} className="flex items-baseline gap-5 py-3">
-                <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">
+          <ol className="mt-10 hidden max-w-sm space-y-2.5 lg:block">
+            {LANGKAH.map(([no, teks], i) => (
+              <li key={no} className="flex items-center gap-4 rounded-2xl bg-white/85 px-4 py-3 shadow-kartu ring-1 ring-primary-100 backdrop-blur">
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold tabular-nums"
+                  style={{ backgroundColor: SOFT_LANGKAH[i][0], color: SOFT_LANGKAH[i][1] }}
+                >
                   {no}
                 </span>
-                <span className="text-[15px]">{teks}</span>
+                <span className="text-[15px] font-medium">{teks}</span>
               </li>
             ))}
           </ol>
         </div>
 
-        <p className="hidden text-xs text-[#14213d]/55 lg:block">
+        <p className="hidden text-xs text-[#0c2d48]/55 lg:block">
           &copy; {new Date().getFullYear()} Dinas Sosial Kabupaten Majalengka
         </p>
       </aside>
@@ -141,7 +143,7 @@ export default function Login() {
                 placeholder="nama@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-base text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-primary-600 focus:ring-4 focus:ring-primary-600/15"
                 required
               />
             </div>
@@ -169,7 +171,7 @@ export default function Login() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-3.5 pr-12 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
+                  className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-3.5 pr-12 text-base text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-primary-600 focus:ring-4 focus:ring-primary-600/15"
                   required
                 />
 
@@ -200,7 +202,7 @@ export default function Login() {
                 id="remember"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 accent-[#1d4ed8]"
+                className="h-4 w-4 rounded border-slate-300 accent-[#0369a1]"
               />
               Ingat saya di perangkat ini
             </label>
@@ -208,7 +210,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary-700 font-semibold text-white transition-colors hover:bg-primary-600 active:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary-700 font-semibold text-white shadow-[0_6px_16px_rgba(3,105,161,0.28)] transition-all hover:bg-primary-600 active:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
               {isLoading ? (
                 <>

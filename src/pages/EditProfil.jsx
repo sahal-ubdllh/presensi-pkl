@@ -14,10 +14,10 @@ export default function EditProfil() {
   if (!profile) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        className="flex min-h-screen items-center justify-center bg-[#f0f9ff]"
         style={{ ...FONT, color: TINTA }}
       >
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#0369a1] border-t-transparent" />
       </div>
     );
   }
@@ -112,7 +112,7 @@ function FormEditProfil({ profile }) {
         <div className="relative mb-5 w-fit">
           <Avatar profile={profile} />
           <label
-            className={`absolute -bottom-1 -right-1 cursor-pointer rounded-full bg-[#1d4ed8] p-2 text-white shadow transition hover:bg-[#1e40af] ${
+            className={`absolute -bottom-1 -right-1 cursor-pointer rounded-full bg-primary-700 p-2 text-white shadow-kartu ring-2 ring-white transition hover:bg-primary-600 ${
               uploading ? "pointer-events-none opacity-50" : ""
             }`}
             title="Ganti foto"
@@ -142,7 +142,7 @@ function FormEditProfil({ profile }) {
             type="text"
             value={formData.nama_lengkap}
             onChange={ubah("nama_lengkap")}
-            className={`${INPUT_CLS} h-11`}
+            className={`${INPUT_CLS} h-12`}
             required
           />
         </div>
@@ -157,7 +157,7 @@ function FormEditProfil({ profile }) {
                 id="jenis"
                 value={formData.jenis_peserta}
                 onChange={ubah("jenis_peserta")}
-                className={`${INPUT_CLS} h-11`}
+                className={`${INPUT_CLS} h-12`}
               >
                 <option value="Mahasiswa">Mahasiswa</option>
                 <option value="Siswa">Siswa</option>
@@ -173,7 +173,7 @@ function FormEditProfil({ profile }) {
                 type="text"
                 value={formData.asal_instansi}
                 onChange={ubah("asal_instansi")}
-                className={`${INPUT_CLS} h-11`}
+                className={`${INPUT_CLS} h-12`}
                 required
               />
             </div>
@@ -189,7 +189,7 @@ function FormEditProfil({ profile }) {
             type="tel"
             value={formData.no_telepon}
             onChange={ubah("no_telepon")}
-            className={`${INPUT_CLS} h-11`}
+            className={`${INPUT_CLS} h-12`}
             required
           />
         </div>
@@ -197,7 +197,7 @@ function FormEditProfil({ profile }) {
         <button
           type="submit"
           disabled={loading}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1d4ed8] text-base font-semibold text-white transition hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary-700 text-base font-bold text-white shadow-[0_6px_16px_rgba(3,105,161,0.28)] transition hover:bg-primary-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           {loading ? (
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />

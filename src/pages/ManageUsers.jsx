@@ -203,11 +203,11 @@ export default function ManageUsers() {
 
   const labelCls = "mb-1.5 block text-sm font-semibold";
   const overlayCls =
-    "fixed inset-0 z-50 flex items-end justify-center bg-[#14213d]/50 p-4 backdrop-blur-sm sm:items-center";
+    "fixed inset-0 z-50 flex items-end justify-center bg-[#0c2d48]/50 p-4 backdrop-blur-sm sm:items-center";
   const panelCls =
-    "relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-6 text-[#14213d]";
+    "relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 text-[#0c2d48] shadow-2xl";
   const tutupCls =
-    "absolute right-4 top-4 rounded p-1 text-[#14213d]/50 hover:bg-[#14213d]/10 hover:text-[#14213d]";
+    "absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:bg-primary-50 hover:text-primary-700";
 
   return (
     <>
@@ -216,7 +216,7 @@ export default function ManageUsers() {
         aksi={
           <button
             onClick={bukaTambah}
-            className="flex items-center gap-1.5 rounded-lg bg-[#1d4ed8] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#1e40af]"
+            className="flex items-center gap-1.5 rounded-full bg-primary-700 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(3,105,161,0.25)] transition hover:bg-primary-600"
           >
             <UserPlus className="h-4 w-4" />
             Tambah akun
@@ -229,7 +229,7 @@ export default function ManageUsers() {
       >
         <div className="space-y-4">
           {/* Tab */}
-          <div className="grid grid-cols-2 rounded-lg border border-[#14213d]/15 bg-white p-1">
+          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-primary-50 p-1 ring-1 ring-primary-100">
             {["peserta", "pembimbing"].map((tab) => (
               <button
                 key={tab}
@@ -237,10 +237,10 @@ export default function ManageUsers() {
                   setActiveTab(tab);
                   setSearchTerm("");
                 }}
-                className={`h-9 rounded-md text-sm font-medium transition-colors ${
+                className={`h-10 rounded-xl text-sm font-semibold transition ${
                   activeTab === tab
-                    ? "bg-[#14213d] text-white"
-                    : "text-[#14213d]/70 hover:bg-[#f3efe6]"
+                    ? "bg-primary-700 text-white shadow-[0_4px_12px_rgba(3,105,161,0.3)]"
+                    : "text-primary-800 hover:bg-white"
                 }`}
               >
                 {tab === "peserta" ? "Peserta" : "Pembimbing"}
@@ -250,42 +250,42 @@ export default function ManageUsers() {
 
           {/* Cari */}
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#14213d]/40" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-500" />
             <input
               type="text"
               placeholder={`Cari ${activeTab}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`${INPUT_CLS} h-11 pl-10 text-sm`}
+              className={`${INPUT_CLS} h-12 pl-10 text-sm`}
             />
           </div>
 
           {/* Daftar */}
           {loading ? (
-            <div className="flex justify-center rounded-xl border border-[#14213d]/10 bg-white py-14">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+            <div className="flex justify-center rounded-2xl border border-primary-100 bg-white py-14 shadow-kartu">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0369a1] border-t-transparent" />
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#14213d]/25 px-6 py-12 text-center text-sm text-[#14213d]/65">
+            <div className="rounded-2xl border border-dashed border-primary-200 bg-primary-50/60 px-6 py-12 text-center text-sm text-primary-800">
               Tidak ada data ditemukan.
             </div>
           ) : (
-            <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
+            <ul className="space-y-2.5">
               {filteredUsers.map((user) => (
-                <li key={user.id} className="flex items-center gap-3 px-4 py-3.5">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#14213d]/[0.07] text-sm font-semibold">
+                <li key={user.id} className="flex items-center gap-3 rounded-2xl border border-primary-100 bg-white px-4 py-3.5 shadow-kartu">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-primary-200 text-sm font-bold text-primary-800">
                     {user.nama_lengkap?.charAt(0)?.toUpperCase() || "U"}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <p className="truncate text-sm font-semibold">{user.nama_lengkap}</p>
                       {user.role === "pembimbing" && (
-                        <ShieldCheck size={14} className="shrink-0 text-[#2b4c7e]" />
+                        <ShieldCheck size={14} className="shrink-0 text-primary-600" />
                       )}
                     </div>
-                    <p className="truncate text-xs text-[#14213d]/60">{user.email}</p>
+                    <p className="truncate text-xs text-[#0c2d48]/60">{user.email}</p>
                     {(user.jenis_peserta || user.asal_instansi) && (
-                      <p className="mt-0.5 truncate text-[11px] text-[#14213d]/45">
+                      <p className="mt-0.5 truncate text-[11px] text-[#0c2d48]/45">
                         {[user.jenis_peserta, user.asal_instansi].filter(Boolean).join(" · ")}
                       </p>
                     )}
@@ -293,7 +293,7 @@ export default function ManageUsers() {
                   <div className="flex shrink-0 items-center">
                     <button
                       onClick={() => bukaReset(user)}
-                      className="rounded-lg p-2 text-[#14213d]/60 transition-colors hover:bg-[#14213d]/10 hover:text-[#14213d]"
+                      className="rounded-full p-2 text-primary-600 transition-colors hover:bg-primary-50"
                       title="Reset password"
                       aria-label="Reset password"
                     >
@@ -301,7 +301,7 @@ export default function ManageUsers() {
                     </button>
                     <button
                       onClick={() => handleDeleteUser(user.id, user.email)}
-                      className="rounded-lg p-2 transition-colors hover:bg-[#a63d2f]/10"
+                      className="rounded-full p-2 transition-colors hover:bg-[#fee2e2]"
                       style={{ color: WARNA.merah }}
                       title="Nonaktifkan akun"
                       aria-label="Nonaktifkan akun"
@@ -324,7 +324,7 @@ export default function ManageUsers() {
               <X className="h-5 w-5" />
             </button>
             <h2 className="text-lg font-bold tracking-tight">Reset password</h2>
-            <p className="mb-5 mt-1 break-all text-sm text-[#14213d]/65">
+            <p className="mb-5 mt-1 break-all text-sm text-[#0c2d48]/65">
               {resetTarget.nama_lengkap}
               <br />
               <span className="text-xs">{resetTarget.email}</span>
@@ -334,19 +334,19 @@ export default function ManageUsers() {
               <div className="space-y-4">
                 <p
                   className="rounded-lg p-3 text-sm leading-relaxed"
-                  style={{ color: WARNA.hijau, backgroundColor: `${WARNA.hijau}14` }}
+                  style={{ color: WARNA.hijau, backgroundColor: "#dcfce7" }}
                 >
                   Password berhasil diubah. Berikan password ini kepada pengguna, lalu minta
                   mereka menyimpannya. Password tidak akan ditampilkan lagi.
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 rounded-lg bg-[#f3efe6] px-4 py-3 font-mono text-base tracking-wide">
+                  <code className="flex-1 rounded-lg bg-[#f0f9ff] px-4 py-3 font-mono text-base tracking-wide">
                     {resetPw}
                   </code>
                   <button
                     type="button"
                     onClick={salinPassword}
-                    className="rounded-lg bg-[#f3efe6] p-3 hover:bg-[#ebe5d6]"
+                    className="rounded-lg bg-[#f0f9ff] p-3 hover:bg-[#e0f2fe]"
                     aria-label="Salin password"
                   >
                     <Copy className="h-5 w-5" />
@@ -355,7 +355,7 @@ export default function ManageUsers() {
                 <button
                   type="button"
                   onClick={tutupReset}
-                  className="h-11 w-full rounded-lg bg-[#1d4ed8] font-semibold text-white hover:bg-[#1e40af]"
+                  className="h-12 w-full rounded-xl bg-primary-700 font-bold text-white hover:bg-primary-600"
                 >
                   Selesai
                 </button>
@@ -380,21 +380,21 @@ export default function ManageUsers() {
                     <button
                       type="button"
                       onClick={() => setResetPw(passwordAcak())}
-                      className="rounded-lg bg-[#f3efe6] p-3 hover:bg-[#ebe5d6]"
+                      className="rounded-lg bg-[#f0f9ff] p-3 hover:bg-[#e0f2fe]"
                       title="Buat acak"
                       aria-label="Buat password acak"
                     >
                       <RefreshCw className="h-5 w-5" />
                     </button>
                   </div>
-                  <p className="mt-1.5 text-xs text-[#14213d]/55">
+                  <p className="mt-1.5 text-xs text-[#0c2d48]/55">
                     Minimal 6 karakter. Pengguna yang sedang login tidak otomatis keluar.
                   </p>
                 </div>
                 <button
                   type="submit"
                   disabled={resetting}
-                  className="h-11 w-full rounded-lg bg-[#1d4ed8] font-semibold text-white hover:bg-[#1e40af] disabled:opacity-60"
+                  className="h-12 w-full rounded-xl bg-primary-700 font-bold text-white hover:bg-primary-600 disabled:opacity-60"
                 >
                   {resetting ? "Menyimpan..." : "Simpan password baru"}
                 </button>
@@ -497,7 +497,7 @@ export default function ManageUsers() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 h-11 w-full rounded-lg bg-[#1d4ed8] font-semibold text-white hover:bg-[#1e40af] disabled:opacity-60"
+                className="mt-2 h-12 w-full rounded-xl bg-primary-700 font-bold text-white hover:bg-primary-600 disabled:opacity-60"
               >
                 {loading ? "Memproses..." : "Simpan akun"}
               </button>

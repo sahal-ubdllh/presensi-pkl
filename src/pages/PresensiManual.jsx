@@ -16,19 +16,9 @@ import "@fontsource-variable/public-sans";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { getTodayString } from "../utils/dateUtils";
-import konturUrl from "../assets/kontur.svg";
 import toast from "react-hot-toast";
+import { FONT, TINTA, LATAR_KONTUR, PITA_LOGO, INPUT_CLS } from "../utils/tema";
 
-// Palet sama dengan Login dan Dashboard
-const KERTAS = "#f3efe6";
-const TINTA = "#14213d";
-const FONT = { fontFamily: '"Public Sans Variable", system-ui, sans-serif' };
-const LATAR_KONTUR = {
-  backgroundColor: KERTAS,
-  backgroundImage: `url(${konturUrl})`,
-  backgroundSize: "cover",
-  backgroundPosition: "right bottom",
-};
 
 const JENIS = [
   {
@@ -75,8 +65,7 @@ const LANGKAH = [
   ["03", "Pembimbing meninjau pengajuan"],
 ];
 
-const inputCls =
-  "w-full rounded-lg border border-slate-300 bg-white px-3.5 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20";
+const inputCls = INPUT_CLS;
 
 export default function PresensiManual() {
   const { profile } = useAuth();
@@ -171,18 +160,19 @@ export default function PresensiManual() {
 
   return (
     <div
-      className="min-h-screen bg-[#f3efe6] lg:grid lg:grid-cols-[1.08fr_1fr]"
+      className="min-h-screen bg-[#f0f9ff] lg:grid lg:grid-cols-[1.08fr_1fr]"
       style={{ ...FONT, color: TINTA }}
     >
       {/* Sisi judul: pita di atas (mobile) / panel kiri penuh (desktop) */}
       <aside
         style={LATAR_KONTUR}
-        className="px-5 pb-6 pt-5 sm:px-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-between lg:px-14 lg:py-12 xl:px-20"
+        className="relative px-5 pb-6 pt-5 sm:px-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-between lg:px-14 lg:py-12 xl:px-20"
       >
+        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ backgroundImage: PITA_LOGO }} />
         <div className="mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none">
           <button
             onClick={() => navigate(-1)}
-            className="-ml-2 flex items-center gap-1.5 rounded-lg p-2 text-sm font-medium text-[#14213d]/70 transition-colors hover:bg-[#14213d]/10 hover:text-[#14213d]"
+            className="-ml-2 flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-primary-700 transition-colors hover:bg-white/70 hover:text-primary-800"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali
@@ -193,22 +183,22 @@ export default function PresensiManual() {
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-5xl lg:leading-[1.1]">
             Presensi manual
           </h1>
-          <p className="mt-1.5 max-w-md text-[15px] leading-relaxed text-[#14213d]/70 lg:mt-3 lg:text-base">
+          <p className="mt-1.5 max-w-md text-[15px] leading-relaxed text-[#0c2d48]/70 lg:mt-3 lg:text-base">
             Untuk presensi di luar kantor, izin, atau sakit. Semua pengajuan
             ditinjau pembimbing.
           </p>
 
-          <ol className="mt-10 hidden max-w-sm divide-y divide-[#14213d]/10 border-y border-[#14213d]/10 lg:block">
+          <ol className="mt-10 hidden max-w-sm space-y-2.5 lg:block">
             {LANGKAH.map(([no, teks]) => (
-              <li key={no} className="flex items-baseline gap-5 py-3">
-                <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">{no}</span>
-                <span className="text-[15px]">{teks}</span>
+              <li key={no} className="flex items-center gap-4 rounded-2xl bg-white/80 px-4 py-3 shadow-kartu ring-1 ring-primary-100 backdrop-blur">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 font-mono text-xs font-semibold tabular-nums text-primary-700">{no}</span>
+                <span className="text-[15px] font-medium">{teks}</span>
               </li>
             ))}
           </ol>
         </div>
 
-        <p className="hidden text-xs text-[#14213d]/55 lg:block">
+        <p className="hidden text-xs text-[#0c2d48]/55 lg:block">
           &copy; {new Date().getFullYear()} Dinas Sosial Kabupaten Majalengka
         </p>
       </aside>
@@ -221,10 +211,10 @@ export default function PresensiManual() {
         >
           <section>
             <h2 className="mb-2.5 flex items-baseline gap-3 text-sm font-semibold">
-              <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">01</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 font-mono text-[11px] font-bold tabular-nums text-primary-700">01</span>
               Presensi
             </h2>
-            <div className="grid grid-cols-2 divide-x divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
+            <div className="grid grid-cols-2 gap-1 rounded-2xl bg-primary-50 p-1 ring-1 ring-primary-100">
               {[
                 { id: "masuk", label: "Masuk", ikon: LogIn },
                 { id: "pulang", label: "Pulang", ikon: LogOut },
@@ -236,8 +226,8 @@ export default function PresensiManual() {
                     type="button"
                     onClick={() => pilihJenis(t.id)}
                     aria-pressed={aktif}
-                    className={`flex items-center justify-center gap-2 px-1 py-3.5 text-sm font-medium transition-colors ${
-                      aktif ? "bg-[#14213d] text-white" : "text-[#14213d] hover:bg-[#f3efe6]"
+                    className={`flex items-center justify-center gap-2 rounded-xl px-1 py-3 text-sm font-semibold transition ${
+                      aktif ? "bg-primary-700 text-white shadow-[0_4px_12px_rgba(3,105,161,0.3)]" : "text-primary-800 hover:bg-white"
                     }`}
                   >
                     <t.ikon className="h-5 w-5" strokeWidth={1.9} />
@@ -256,7 +246,7 @@ export default function PresensiManual() {
                   id="keperluan"
                   value={formData.jenis}
                   onChange={(e) => pilihJenis(e.target.value)}
-                  className={`${inputCls} h-11`}
+                  className={`${inputCls} h-12`}
                 >
                   <option value="masuk">Presensi di luar kantor</option>
                   <option value="izin">Izin</option>
@@ -264,23 +254,23 @@ export default function PresensiManual() {
                 </select>
               </div>
             )}
-            <p className="mt-3 min-h-[2.5rem] text-[13px] leading-relaxed text-[#14213d]/70">
+            <p className="mt-3 min-h-[2.5rem] text-[13px] leading-relaxed text-[#0c2d48]/70">
               {jenis.ket}
             </p>
           </section>
 
-          <section className="space-y-5 rounded-xl border border-[#14213d]/10 bg-white p-5 sm:p-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
+          <section className="space-y-5 rounded-2xl border border-primary-100 bg-white p-5 shadow-kartu sm:p-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <h2 className="flex items-baseline gap-3 text-sm font-semibold">
-              <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">02</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 font-mono text-[11px] font-bold tabular-nums text-primary-700">02</span>
               Detail
             </h2>
 
             <div>
               <span className="mb-1.5 block text-sm font-semibold">Tanggal</span>
-              <p className="flex h-11 items-center rounded-lg border border-[#14213d]/15 bg-[#f3efe6] px-3.5 text-base">
+              <p className="flex h-12 items-center rounded-xl border border-primary-200 bg-primary-50 px-3.5 text-base">
                 {format(new Date(), "EEEE, d MMMM yyyy", { locale: localeId })}
               </p>
-              <p className="mt-1.5 text-xs text-[#14213d]/55">
+              <p className="mt-1.5 text-xs text-[#0c2d48]/55">
                 Presensi manual hanya untuk hari ini.
               </p>
             </div>
@@ -302,22 +292,22 @@ export default function PresensiManual() {
             <div>
               <span className="mb-1.5 block text-sm font-semibold">{jenis.buktiLabel}</span>
               {formData.bukti_file ? (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-[#14213d]/15 bg-[#f3efe6] px-3.5 py-3">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-primary-200 bg-primary-50 px-3.5 py-3">
                   <span className="truncate text-sm">{formData.bukti_file.name}</span>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, bukti_file: null })}
-                    className="rounded p-1 text-[#14213d]/60 hover:bg-[#14213d]/10 hover:text-[#14213d]"
+                    className="rounded p-1 text-[#0c2d48]/60 hover:bg-[#0c2d48]/10 hover:text-[#0c2d48]"
                     aria-label="Hapus file"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
-                <label className="flex h-28 w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#14213d]/30 bg-[#f3efe6]/50 transition-colors hover:bg-[#f3efe6]">
-                  <Upload className="mb-1.5 h-6 w-6 text-[#2b4c7e]" strokeWidth={1.8} />
-                  <span className="text-sm">Pilih file</span>
-                  <span className="mt-0.5 text-xs text-[#14213d]/55">
+                <label className="flex h-28 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary-300 bg-primary-50/60 transition-colors hover:bg-primary-50">
+                  <Upload className="mb-1.5 h-6 w-6 text-[#0369a1]" strokeWidth={1.8} />
+                  <span className="text-sm font-semibold text-primary-700">Pilih file</span>
+                  <span className="mt-0.5 text-xs text-[#0c2d48]/55">
                     PNG, JPG atau PDF, maksimal 5MB
                   </span>
                   <input
@@ -336,7 +326,7 @@ export default function PresensiManual() {
           <button
             type="submit"
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1d4ed8] text-base font-semibold text-white transition hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary-700 text-base font-bold text-white shadow-[0_6px_16px_rgba(3,105,161,0.28)] transition hover:bg-primary-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
           >
             {loading ? (
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />

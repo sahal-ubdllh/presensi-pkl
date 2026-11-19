@@ -22,19 +22,9 @@ import {
   parseTanggal,
 } from "../utils/statistikPeserta";
 import Pengumuman from "./Pengumuman";
-import konturUrl from "../assets/kontur.svg";
 import toast from "react-hot-toast";
+import { FONT, TINTA, LATAR_KONTUR, SOFT, WARNA, PITA_LOGO } from "../utils/tema";
 
-// Palet mengikuti halaman Login: kertas hangat + tinta biru
-const KERTAS = "#f3efe6";
-const TINTA = "#14213d";
-const FONT = { fontFamily: '"Public Sans Variable", system-ui, sans-serif' };
-const LATAR_KONTUR = {
-  backgroundColor: KERTAS,
-  backgroundImage: `url(${konturUrl})`,
-  backgroundSize: "cover",
-  backgroundPosition: "right bottom",
-};
 
 // Menu dikelompokkan supaya tidak berupa 6 kotak yang sama rata
 const menuGroups = [
@@ -42,18 +32,18 @@ const menuGroups = [
     no: "01",
     title: "Kehadiran",
     items: [
-      { id: "kehadiran", label: "Buat kehadiran", icon: LogIn, path: "/presensi", utama: true },
-      { id: "manual", label: "Kehadiran manual", icon: FileEdit, path: "/presensi-manual" },
-      { id: "riwayat-presensi", label: "Riwayat hadir", icon: History, path: "/riwayat-presensi" },
+      { id: "kehadiran", label: "Buat kehadiran", icon: LogIn, path: "/presensi", utama: true, warna: "biru" },
+      { id: "manual", label: "Kehadiran manual", icon: FileEdit, path: "/presensi-manual", warna: "kuning" },
+      { id: "riwayat-presensi", label: "Riwayat hadir", icon: History, path: "/riwayat-presensi", warna: "biru" },
     ],
   },
   {
     no: "02",
     title: "Kegiatan",
     items: [
-      { id: "kegiatan", label: "Buat kegiatan", icon: FilePlus, path: "/logbook", utama: true },
-      { id: "draft", label: "Draft kegiatan", icon: FileEdit, path: "/draft-kegiatan" },
-      { id: "riwayat-kegiatan", label: "Riwayat kegiatan", icon: FileText, path: "/riwayat-kegiatan" },
+      { id: "kegiatan", label: "Buat kegiatan", icon: FilePlus, path: "/logbook", utama: true, warna: "hijau" },
+      { id: "draft", label: "Draft kegiatan", icon: FileEdit, path: "/draft-kegiatan", warna: "kuning" },
+      { id: "riwayat-kegiatan", label: "Riwayat kegiatan", icon: FileText, path: "/riwayat-kegiatan", warna: "biru" },
     ],
   },
 ];
@@ -209,6 +199,10 @@ export default function Dashboard() {
         )
       : 0;
 
+  // Hijau bila baik, kuning bila perlu perhatian, merah bila rendah (sama dengan halaman Statistik)
+  const warnaPersen =
+    attendancePercentage >= 80 ? WARNA.hijau : attendancePercentage >= 60 ? WARNA.ochre : WARNA.merah;
+
   const namaDepan = profile?.nama_lengkap?.split(" ")[0] || "Peserta";
 
   const labelKategori = todayStats.kategori === "izin" ? "izin" : "sakit";
@@ -224,29 +218,30 @@ export default function Dashboard() {
   const selesai = !!todayStats.kategori || (todayStats.jamMasuk && todayStats.jamKeluar);
 
   const statistik = [
-    { label: "Hadir", nilai: monthlyStats.hadir, titik: "#14213d" },
-    { label: "Izin", nilai: monthlyStats.izin, titik: "#b7791f" },
-    { label: "Sakit", nilai: monthlyStats.sakit, titik: "#a63d2f" },
+    { label: "Hadir", nilai: monthlyStats.hadir, titik: WARNA.hijau, soft: SOFT.hijau },
+    { label: "Izin", nilai: monthlyStats.izin, titik: WARNA.ochre, soft: SOFT.kuning },
+    { label: "Sakit", nilai: monthlyStats.sakit, titik: WARNA.merah, soft: SOFT.merah },
   ];
 
   return (
-    <DashboardLayout className="bg-[#f3efe6]">
+    <DashboardLayout className="bg-[#f0f9ff]">
       <div style={{ ...FONT, color: TINTA }}>
         {/* ── Kepala halaman: latar kontur seperti halaman Login ── */}
-        <header style={LATAR_KONTUR} className="pb-16 pt-6">
+        <header style={LATAR_KONTUR} className="relative pb-16 pt-6">
+          <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ backgroundImage: PITA_LOGO }} />
           <div className="mx-auto max-w-5xl px-5 sm:px-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src="/logo-dinsos.png" alt="Logo Dinas Sosial" className="h-9 w-auto" />
-                <div className="border-l border-[#14213d]/20 pl-3 text-xs leading-snug">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-kartu ring-1 ring-primary-100"><img src="/logo-dinsos.png" alt="Logo Dinas Sosial" className="h-9 w-auto" /></span>
+                <div className="text-xs leading-snug">
                   <p className="font-semibold">Dinas Sosial</p>
-                  <p className="text-[#14213d]/65">Kabupaten Majalengka</p>
+                  <p className="text-[#0c2d48]/65">Kabupaten Majalengka</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={loadStats}
-                  className="rounded-lg p-2 text-[#14213d]/60 transition-colors hover:bg-[#14213d]/10 hover:text-[#14213d]"
+                  className="rounded-full p-2.5 text-primary-700 transition-colors hover:bg-white/80"
                   title="Muat ulang"
                   aria-label="Muat ulang"
                 >
@@ -254,14 +249,14 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => navigate("/pengumuman")}
-                  className="rounded-lg p-2 text-[#14213d]/60 transition-colors hover:bg-[#14213d]/10 hover:text-[#14213d]"
+                  className="rounded-full p-2.5 text-primary-700 transition-colors hover:bg-white/80"
                   title="Pengumuman"
                   aria-label="Pengumuman"
                 >
                   <Bell className="h-5 w-5" />
                 </button>
                 <div
-                  className="ml-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#14213d] ring-2 ring-white/70 transition hover:ring-[#2b4c7e]"
+                  className="ml-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-700 ring-2 ring-white shadow-kartu transition hover:ring-primary-300"
                   onClick={() => navigate("/profil")}
                 >
                   {profile?.foto_profil ? (
@@ -276,7 +271,7 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-8">
-              <p className="font-mono text-xs tracking-wide text-[#2b4c7e]">{today}</p>
+              <p className="inline-block rounded-full bg-white/80 px-3 py-1 font-mono text-xs font-medium tracking-wide text-primary-700 ring-1 ring-primary-100">{today}</p>
               <h1 className="mt-1.5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
                 Halo, {namaDepan}
               </h1>
@@ -284,31 +279,44 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="mx-auto -mt-10 max-w-5xl space-y-8 px-5 pb-28 sm:px-8">
+        <div className="relative mx-auto -mt-10 max-w-5xl space-y-8 px-5 pb-28 sm:px-8">
           {/* ── Presensi hari ini ── */}
-          <section className="rounded-xl bg-[#14213d] p-5 text-white shadow-[0_8px_24px_-12px_rgba(20,33,61,0.6)] sm:p-6">
+          <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 p-5 text-white shadow-[0_12px_28px_-12px_rgba(3,105,161,0.65)] sm:p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/75">
                   Presensi hari ini
                 </p>
-                <p className="mt-1 text-sm text-white/85">{loadingStats ? "Memuat..." : statusHariIni}</p>
-                <div className="mt-4 flex items-center gap-8">
+                <p
+                  className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor: loadingStats ? "rgba(255,255,255,.18)" : selesai ? SOFT.hijau.bg : todayStats.jamMasuk ? SOFT.biru.bg : SOFT.kuning.bg,
+                    color: loadingStats ? "#fff" : selesai ? SOFT.hijau.fg : todayStats.jamMasuk ? SOFT.biru.fg : SOFT.kuning.fg,
+                  }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {loadingStats ? "Memuat..." : statusHariIni}
+                </p>
+                <div className="mt-5 flex items-center gap-6 sm:gap-8">
                   <div className="flex items-center gap-3">
-                    <LogIn className="h-5 w-5 text-white/60" />
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+                      <LogIn className="h-5 w-5" />
+                    </span>
                     <div>
-                      <p className="text-[11px] text-white/60">Masuk</p>
-                      <p className={`font-mono text-2xl font-semibold tabular-nums ${todayStats.jamMasuk ? "" : "text-white/30"}`}>
+                      <p className="text-[11px] text-white/75">Masuk</p>
+                      <p className={`font-mono text-2xl font-semibold tabular-nums ${todayStats.jamMasuk ? "" : "text-white/40"}`}>
                         {loadingStats ? "..." : todayStats.jamMasuk || "--:--"}
                       </p>
                     </div>
                   </div>
-                  <div className="h-10 w-px bg-white/15" />
+                  <div className="h-10 w-px bg-white/25" />
                   <div className="flex items-center gap-3">
-                    <LogOut className="h-5 w-5 text-white/60" />
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+                      <LogOut className="h-5 w-5" />
+                    </span>
                     <div>
-                      <p className="text-[11px] text-white/60">Pulang</p>
-                      <p className={`font-mono text-2xl font-semibold tabular-nums ${todayStats.jamKeluar ? "" : "text-white/30"}`}>
+                      <p className="text-[11px] text-white/75">Pulang</p>
+                      <p className={`font-mono text-2xl font-semibold tabular-nums ${todayStats.jamKeluar ? "" : "text-white/40"}`}>
                         {loadingStats ? "..." : todayStats.jamKeluar || "--:--"}
                       </p>
                     </div>
@@ -318,7 +326,7 @@ export default function Dashboard() {
               {!loadingStats && !selesai && (
                 <button
                   onClick={() => navigate("/presensi")}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-[#14213d] transition hover:bg-[#f3efe6]"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-bold text-primary-700 shadow-[0_6px_16px_rgba(0,0,0,0.15)] transition hover:bg-primary-50 active:scale-[0.98]"
                 >
                   {todayStats.jamMasuk ? "Presensi pulang" : "Presensi masuk"}
                   <ArrowRight className="h-4 w-4" />
@@ -332,24 +340,27 @@ export default function Dashboard() {
             {menuGroups.map((g) => (
               <section key={g.no}>
                 <h2 className="mb-2.5 flex items-baseline gap-3 text-sm font-semibold">
-                  <span className="font-mono text-xs tabular-nums text-[#2b4c7e]">{g.no}</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 font-mono text-[11px] font-bold tabular-nums text-primary-700">{g.no}</span>
                   {g.title}
                 </h2>
-                <div className="grid grid-cols-3 divide-x divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white">
+                <div className="grid grid-cols-3 gap-2.5">
                   {g.items.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => navigate(item.path)}
-                      className="group flex flex-col items-center gap-2.5 px-2 py-4 text-center transition-colors hover:bg-[#f3efe6]"
+                      className="group flex flex-col items-center gap-2.5 rounded-2xl border border-primary-100 bg-white px-2 py-4 text-center shadow-kartu transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md active:scale-[0.98]"
                     >
                       <span
-                        className={`flex h-11 w-11 items-center justify-center rounded-lg transition-transform group-hover:-translate-y-0.5 ${
-                          item.utama ? "bg-[#1d4ed8] text-white" : "bg-[#14213d]/[0.07] text-[#14213d]"
-                        }`}
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl"
+                        style={
+                          item.utama
+                            ? { backgroundColor: SOFT[item.warna].fg, color: "#fff" }
+                            : { backgroundColor: SOFT[item.warna].bg, color: SOFT[item.warna].fg }
+                        }
                       >
                         <item.icon className="h-5 w-5" strokeWidth={1.9} />
                       </span>
-                      <span className="text-[12px] font-medium leading-tight">{item.label}</span>
+                      <span className="text-[12px] font-semibold leading-tight">{item.label}</span>
                     </button>
                   ))}
                 </div>
@@ -359,17 +370,17 @@ export default function Dashboard() {
 
           {/* ── Statistik + pengumuman ── */}
           <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-            <section className="rounded-xl border border-[#14213d]/10 bg-white p-5 sm:p-6">
+            <section className="rounded-2xl border border-primary-100 bg-white p-5 shadow-kartu sm:p-6">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-sm font-semibold">Statistik kehadiran</h2>
-                <span className="font-mono text-xs text-[#14213d]/55">{getCurrentMonthYear()}</span>
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 font-mono text-xs text-primary-700">{getCurrentMonthYear()}</span>
               </div>
 
-              <div className="mt-5 grid grid-cols-3 divide-x divide-[#14213d]/10">
-                {statistik.map((s, i) => (
-                  <div key={s.label} className={i === 0 ? "pr-4" : "px-4"}>
-                    <p className="font-mono text-4xl font-semibold tabular-nums leading-none">{s.nilai}</p>
-                    <p className="mt-2 flex items-center gap-1.5 text-xs text-[#14213d]/65">
+              <div className="mt-5 grid grid-cols-3 gap-2.5">
+                {statistik.map((s) => (
+                  <div key={s.label} className="rounded-xl px-3 py-3" style={{ backgroundColor: s.soft.bg }}>
+                    <p className="font-mono text-3xl font-semibold tabular-nums leading-none" style={{ color: s.titik }}>{s.nilai}</p>
+                    <p className="mt-2 flex items-center gap-1.5 text-xs font-medium" style={{ color: s.titik }}>
                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.titik }} />
                       {s.label}
                     </p>
@@ -379,16 +390,16 @@ export default function Dashboard() {
 
               <div className="mt-7">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs font-medium text-[#14213d]/75">Tingkat kehadiran</span>
-                  <span className="font-mono text-sm font-semibold text-[#1d4ed8]">{attendancePercentage}%</span>
+                  <span className="text-xs font-medium text-[#0c2d48]/75">Tingkat kehadiran</span>
+                  <span className="font-mono text-sm font-bold" style={{ color: warnaPersen }}>{attendancePercentage}%</span>
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#14213d]/10">
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-[#2b4c7e] transition-all duration-500"
-                    style={{ width: `${attendancePercentage}%` }}
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${attendancePercentage}%`, backgroundColor: warnaPersen }}
                   />
                 </div>
-                <p className="mt-2 text-[11px] text-[#14213d]/55">
+                <p className="mt-2 text-[11px] text-[#0c2d48]/55">
                   {monthlyStats.hadir} dari {monthlyStats.totalHariKerja} hari kerja
                   {monthlyStats.terlambat > 0 && ` · ${monthlyStats.terlambat}x terlambat`}
                 </p>

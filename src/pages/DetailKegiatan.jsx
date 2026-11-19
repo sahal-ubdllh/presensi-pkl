@@ -4,7 +4,7 @@ import { FileText, ExternalLink } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../utils/dateUtils";
 import PageShell from "../components/PageShell";
-import { FONT, TINTA, WARNA, gayaChip } from "../utils/tema";
+import { FONT, TINTA, WARNA, SOFT, gayaChip } from "../utils/tema";
 import toast from "react-hot-toast";
 
 const STATUS = {
@@ -43,17 +43,17 @@ export default function DetailKegiatan() {
   if (loading || !kegiatan) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-[#f3efe6]"
+        className="flex min-h-screen items-center justify-center bg-[#f0f9ff]"
         style={{ ...FONT, color: TINTA }}
       >
         {loading ? (
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#0369a1] border-t-transparent" />
         ) : (
           <div className="text-center">
-            <p className="text-[#14213d]/70">Kegiatan tidak ditemukan</p>
+            <p className="text-[#0c2d48]/70">Kegiatan tidak ditemukan</p>
             <button
               onClick={() => navigate(-1)}
-              className="mt-3 text-sm font-semibold text-[#1d4ed8] hover:underline"
+              className="mt-3 text-sm font-semibold text-[#0369a1] hover:underline"
             >
               Kembali
             </button>
@@ -72,9 +72,9 @@ export default function DetailKegiatan() {
       deskripsi={undefined}
       samping={
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <span className="font-mono text-sm text-[#2b4c7e]">{formatDate(kegiatan.tanggal)}</span>
+          <span className="rounded-full bg-white/80 px-3 py-1 font-mono text-sm font-medium text-primary-700 ring-1 ring-primary-100">{formatDate(kegiatan.tanggal)}</span>
           <span
-            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            className="rounded-full px-3 py-1 text-xs font-semibold"
             style={gayaChip(st.warna)}
           >
             {st.label}
@@ -86,7 +86,7 @@ export default function DetailKegiatan() {
       <div className="space-y-6">
         <section>
           <h2 className="mb-2 text-sm font-semibold">Uraian kegiatan</h2>
-          <p className="whitespace-pre-wrap rounded-xl border border-[#14213d]/10 bg-white p-4 text-[15px] leading-relaxed lg:border-[#14213d]/20">
+          <p className="whitespace-pre-wrap rounded-2xl border border-primary-100 bg-white p-4 text-[15px] leading-relaxed shadow-kartu">
             {kegiatan.uraian}
           </p>
         </section>
@@ -98,18 +98,18 @@ export default function DetailKegiatan() {
               <img
                 src={kegiatan.bukti_file}
                 alt="Bukti kegiatan"
-                className="w-full rounded-xl border border-[#14213d]/15"
+                className="w-full rounded-2xl border border-primary-100 shadow-kartu"
               />
             ) : (
               <a
                 href={kegiatan.bukti_file}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-xl border border-[#14213d]/15 bg-white p-4 transition-colors hover:bg-[#f3efe6]"
+                className="flex items-center gap-3 rounded-2xl border border-primary-100 bg-white p-4 shadow-kartu transition hover:border-primary-200"
               >
-                <FileText className="h-5 w-5 text-[#2b4c7e]" />
+                <FileText className="h-5 w-5 text-[#0369a1]" />
                 <span className="flex-1 truncate text-sm">Lihat file</span>
-                <ExternalLink className="h-4 w-4 text-[#14213d]/40" />
+                <ExternalLink className="h-4 w-4 text-[#0c2d48]/40" />
               </a>
             )}
           </section>
@@ -118,7 +118,13 @@ export default function DetailKegiatan() {
         {kegiatan.catatan_pembimbing && (
           <section>
             <h2 className="mb-2 text-sm font-semibold">Catatan pembimbing</h2>
-            <p className="rounded-xl border-l-2 border-[#2b4c7e] bg-[#f3efe6] p-4 text-[15px] leading-relaxed">
+            <p
+              className="rounded-2xl border-l-4 p-4 text-[15px] leading-relaxed"
+              style={{
+                backgroundColor: (kegiatan.status === "disetujui" ? SOFT.hijau : kegiatan.status === "ditolak" ? SOFT.merah : SOFT.kuning).bg,
+                borderLeftColor: st.warna === WARNA.biru ? WARNA.ochre : st.warna,
+              }}
+            >
               {kegiatan.catatan_pembimbing}
             </p>
           </section>

@@ -40,7 +40,7 @@ export default function BottomNav() {
   else if (isPembimbing) navItems = pembimbingNavItems;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-primary-100 bg-white/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-4px_20px_rgba(12,45,72,0.06)] backdrop-blur">
       <div className="max-w-md mx-auto flex justify-around items-center">
         {navItems.map(({ path, icon: Icon, label }) => (
           <NavLink
@@ -48,20 +48,22 @@ export default function BottomNav() {
             to={path}
             end={path === "/" || path === "/dashboard-pembimbing" || path === "/dashboard-admin"}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-0 ${
-                isActive
-                  ? "text-primary-600"
-                  : "text-slate-400 hover:text-slate-600"
+              `flex min-w-0 flex-col items-center gap-0.5 px-1 py-1 transition-colors ${
+                isActive ? "text-primary-700" : "text-slate-400 hover:text-slate-600"
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon
-                  className={`w-5 h-5 ${isActive ? "stroke-[2.5px]" : ""}`}
-                />
                 <span
-                  className={`text-[10px] font-medium truncate ${isActive ? "text-primary-600" : ""}`}
+                  className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${
+                    isActive ? "bg-primary-100" : ""
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.4px]" : ""}`} />
+                </span>
+                <span
+                  className={`truncate text-[10px] ${isActive ? "font-bold text-primary-700" : "font-medium"}`}
                 >
                   {label}
                 </span>

@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabase";
 import { hitungStatistik, rentangBulan } from "../utils/statistikPeserta";
 import toast from "react-hot-toast";
 import DashboardLayout from "../components/DashboardLayout";
-import { FONT, TINTA, WARNA, LATAR_KONTUR, INPUT_CLS } from "../utils/tema";
+import { FONT, TINTA, WARNA, LATAR_KONTUR, INPUT_CLS, SOFT, PITA_LOGO } from "../utils/tema";
 
 // Ambil semua baris (Supabase membatasi 1000 baris per permintaan)
 const fetchAll = async (buildQuery) => {
@@ -102,32 +102,33 @@ export default function StatistikPeserta() {
 
   const ringkasan = data
     ? [
-        ["Peserta", data.ringkasan.totalPeserta],
-        ["Rata-rata hadir", `${data.ringkasan.rataKehadiran}%`],
-        ["Kegiatan menunggu", data.ringkasan.kegiatanMenunggu],
+        ["Peserta", data.ringkasan.totalPeserta, SOFT.biru],
+        ["Rata-rata hadir", `${data.ringkasan.rataKehadiran}%`, SOFT.hijau],
+        ["Kegiatan menunggu", data.ringkasan.kegiatanMenunggu, SOFT.kuning],
       ]
     : [];
 
   return (
-    <DashboardLayout className="bg-[#f3efe6]">
+    <DashboardLayout className="bg-[#f0f9ff]">
       <div style={{ ...FONT, color: TINTA }}>
-        <header style={LATAR_KONTUR} className="pb-12 pt-10">
+        <header style={LATAR_KONTUR} className="relative pb-12 pt-10">
+          <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ backgroundImage: PITA_LOGO }} />
           <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 sm:px-8 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="font-mono text-xs tracking-wide text-[#2b4c7e]">Sigap</p>
+              <p className="inline-block rounded-full bg-white/80 px-3 py-1 font-mono text-xs font-medium tracking-wide text-primary-700 ring-1 ring-primary-100">Sigap</p>
               <h1 className="mt-1.5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
                 Statistik peserta
               </h1>
-              <p className="mt-2 text-[15px] text-[#14213d]/70">
+              <p className="mt-2 text-[15px] text-[#0c2d48]/70">
                 Kehadiran dan kegiatan tiap peserta PKL.
               </p>
             </div>
 
             {/* Pemilih bulan */}
-            <div className="flex w-full items-center justify-between rounded-lg border border-[#14213d]/15 bg-white/80 p-1 backdrop-blur-sm md:w-64">
+            <div className="flex w-full items-center justify-between rounded-full border border-primary-100 bg-white p-1 shadow-kartu md:w-64">
               <button
                 onClick={() => geser(-1)}
-                className="rounded-md p-2 text-[#14213d]/70 hover:bg-[#14213d]/10"
+                className="rounded-full p-2 text-primary-700 hover:bg-primary-50"
                 aria-label="Bulan sebelumnya"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -136,7 +137,7 @@ export default function StatistikPeserta() {
               <button
                 onClick={() => geser(1)}
                 disabled={bulanIni}
-                className="rounded-md p-2 text-[#14213d]/70 hover:bg-[#14213d]/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                className="rounded-full p-2 text-primary-700 hover:bg-primary-50 disabled:opacity-30 disabled:hover:bg-transparent"
                 aria-label="Bulan berikutnya"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -148,22 +149,22 @@ export default function StatistikPeserta() {
         <div className="mx-auto max-w-6xl px-5 pb-28 pt-6 sm:px-8">
           {loading || !data ? (
             <div className="flex justify-center py-20">
-              <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#0369a1] border-t-transparent" />
             </div>
           ) : (
             <>
               {/* Ringkasan */}
-              <dl className="grid grid-cols-3 divide-x divide-[#14213d]/10 rounded-xl border border-[#14213d]/10 bg-white py-5">
-                {ringkasan.map(([label, nilai]) => (
-                  <div key={label} className="px-5">
-                    <dd className="font-mono text-3xl font-semibold tabular-nums leading-none sm:text-4xl">
+              <dl className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                {ringkasan.map(([label, nilai, soft]) => (
+                  <div key={label} className="rounded-2xl border px-4 py-4 sm:px-5" style={{ backgroundColor: soft.bg, borderColor: soft.garis }}>
+                    <dd className="font-mono text-3xl font-semibold tabular-nums leading-none sm:text-4xl" style={{ color: soft.fg }}>
                       {nilai}
                     </dd>
-                    <dt className="mt-2 text-xs text-[#14213d]/65">{label}</dt>
+                    <dt className="mt-2 text-xs font-medium" style={{ color: soft.fg }}>{label}</dt>
                   </div>
                 ))}
               </dl>
-              <p className="mt-2.5 text-xs leading-relaxed text-[#14213d]/55">
+              <p className="mt-2.5 text-xs leading-relaxed text-[#0c2d48]/55">
                 Hari kerja (Senin-Jumat) dihitung sejak presensi pertama tiap peserta; libur nasional
                 tidak dikurangi. Presensi manual yang belum disetujui belum dihitung hadir.
               </p>
@@ -171,18 +172,18 @@ export default function StatistikPeserta() {
               {/* Cari & urut */}
               <div className="mt-6 flex flex-col gap-2 sm:flex-row">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#14213d]/40" />
+                  <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-500" />
                   <input
                     value={cari}
                     onChange={(e) => setCari(e.target.value)}
                     placeholder="Cari nama atau instansi..."
-                    className={`${INPUT_CLS} h-11 pl-10 text-sm`}
+                    className={`${INPUT_CLS} h-12 pl-10 text-sm`}
                   />
                 </div>
                 <select
                   value={urut}
                   onChange={(e) => setUrut(e.target.value)}
-                  className={`${INPUT_CLS} h-11 text-sm sm:w-56`}
+                  className={`${INPUT_CLS} h-12 text-sm sm:w-56`}
                 >
                   <option value="nama">Urut nama</option>
                   <option value="terendah">Kehadiran terendah</option>
@@ -191,7 +192,7 @@ export default function StatistikPeserta() {
 
               {/* Daftar peserta */}
               {daftar.length === 0 ? (
-                <div className="mt-4 rounded-xl border border-dashed border-[#14213d]/25 bg-white/60 px-6 py-12 text-center text-sm text-[#14213d]/65">
+                <div className="mt-4 rounded-2xl border border-dashed border-primary-200 bg-primary-50/60 px-6 py-12 text-center text-sm text-[#0c2d48]/65">
                   {data.daftar.length === 0 ? "Belum ada peserta" : "Peserta tidak ditemukan"}
                 </div>
               ) : (
@@ -201,17 +202,18 @@ export default function StatistikPeserta() {
                     return (
                       <article
                         key={p.id}
-                        className="rounded-xl border border-[#14213d]/10 bg-white p-4 sm:p-5"
+                        className="rounded-2xl border border-l-4 border-primary-100 bg-white p-4 shadow-kartu sm:p-5"
+                        style={{ borderLeftColor: p.belumMulai ? "#cbd5e1" : w }}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold">{p.nama_lengkap || "-"}</p>
-                            <p className="mt-0.5 truncate text-xs text-[#14213d]/60">
+                            <p className="mt-0.5 truncate text-xs text-[#0c2d48]/60">
                               {[p.jenis_peserta, p.asal_instansi].filter(Boolean).join(" · ") || "-"}
                             </p>
                           </div>
                           {p.belumMulai ? (
-                            <span className="shrink-0 whitespace-nowrap rounded-full bg-[#14213d]/[0.07] px-2.5 py-1 text-[11px] font-semibold text-[#14213d]/60">
+                            <span className="shrink-0 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
                               Belum mulai
                             </span>
                           ) : (
@@ -224,13 +226,13 @@ export default function StatistikPeserta() {
                           )}
                         </div>
 
-                        <div className="mt-3.5 h-1.5 overflow-hidden rounded-full bg-[#14213d]/10">
+                        <div className="mt-3.5 h-2.5 overflow-hidden rounded-full bg-slate-100">
                           <div
                             className="h-full rounded-full"
                             style={{ width: `${p.persen}%`, backgroundColor: w }}
                           />
                         </div>
-                        <p className="mt-1.5 text-[11px] text-[#14213d]/55">
+                        <p className="mt-1.5 text-[11px] text-[#0c2d48]/55">
                           {p.mulai
                             ? `Mulai presensi ${format(new Date(p.mulai), "dd MMM yyyy", { locale: localeId })}${
                                 p.belumMulai
@@ -240,15 +242,15 @@ export default function StatistikPeserta() {
                             : "Belum pernah presensi"}
                         </p>
 
-                        <dl className="mt-4 grid grid-cols-4 divide-x divide-[#14213d]/10 border-y border-[#14213d]/10 py-3">
-                          <Mini nilai={p.hadir} label="Hadir" warna={WARNA.tinta} awal />
-                          <Mini nilai={p.izin} label="Izin" warna={WARNA.ochre} />
-                          <Mini nilai={p.sakit} label="Sakit" warna={WARNA.biru} />
-                          <Mini nilai={p.tidakHadir} label="Tidak hadir" warna={WARNA.merah} />
+                        <dl className="mt-4 grid grid-cols-4 gap-1.5">
+                          <Mini nilai={p.hadir} label="Hadir" warna={WARNA.hijau} soft={SOFT.hijau} />
+                          <Mini nilai={p.izin} label="Izin" warna={WARNA.ochre} soft={SOFT.kuning} />
+                          <Mini nilai={p.sakit} label="Sakit" warna={WARNA.merah} soft={SOFT.merah} />
+                          <Mini nilai={p.tidakHadir} label="Tidak hadir" warna="#475569" soft={{ bg: "#f1f5f9" }} />
                         </dl>
 
-                        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#14213d]/60">
-                          <span className="font-semibold text-[#14213d]">Kegiatan {p.kegiatan.total}</span>
+                        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#0c2d48]/60">
+                          <span className="font-semibold text-[#0c2d48]">Kegiatan {p.kegiatan.total}</span>
                           <span style={{ color: WARNA.hijau }}>{p.kegiatan.disetujui} disetujui</span>
                           <span style={{ color: WARNA.biru }}>{p.kegiatan.menunggu} menunggu</span>
                           <span style={{ color: WARNA.merah }}>{p.kegiatan.ditolak} ditolak</span>
@@ -270,13 +272,13 @@ export default function StatistikPeserta() {
   );
 }
 
-function Mini({ nilai, label, warna: w, awal }) {
+function Mini({ nilai, label, warna: w, soft }) {
   return (
-    <div className={awal ? "pr-2 text-center" : "px-2 text-center"}>
+    <div className="rounded-xl px-1 py-2.5 text-center" style={{ backgroundColor: soft.bg }}>
       <dd className="font-mono text-xl font-semibold tabular-nums leading-none" style={{ color: w }}>
         {nilai}
       </dd>
-      <dt className="mt-1.5 text-[10px] text-[#14213d]/60">{label}</dt>
+      <dt className="mt-1.5 text-[10px] font-medium" style={{ color: w }}>{label}</dt>
     </div>
   );
 }
