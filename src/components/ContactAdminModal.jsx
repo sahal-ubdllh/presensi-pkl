@@ -1,14 +1,62 @@
+import { useEffect, useState } from 'react';
 import { X, MessageCircle, Mail } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-// Atur di .env.local (lalu jalankan ulang npm run dev / build):
+// Kontak admin dibaca dari tabel `konfigurasi` di Supabase (baris
+// kontak_admin_whatsapp dan kontak_admin_email), jadi bisa diganti lewat Table
+// Editor tanpa mengubah kode atau deploy ulang.
+// Cadangan bila tabel kosong / gagal dibaca: variabel .env (opsional)
 //   VITE_ADMIN_WHATSAPP=6281234567890     (boleh diawali 0 atau 62)
-//   VITE_ADMIN_EMAIL=admin@contoh.go.id   (opsional)
+//   VITE_ADMIN_EMAIL=admin@contoh.go.id
 const rapikanNomor = (v = '') => {
   const angka = String(v).replace(/\D/g, '');
   return angka.startsWith('0') ? '62' + angka.slice(1) : angka;
 };
-const WHATSAPP = rapikanNomor(import.meta.env.VITE_ADMIN_WHATSAPP);
-const EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || '').trim();
+const WHATSAPP_ENV = rapikanNomor(import.meta.env.VITE_ADMIN_WHATSAPP);
+const EMAIL_ENV = (import.meta.env.VITE_ADMIN_EMAIL || '').trim();
+
+// Dimuat sekali per kunjungan, lalu dipakai ulang
+let kontakCache = null;
+let kontakJanji = null;
+function muatKontak() {
+  if (!kontakJanji) {
+    kontakJanji = supabase
+      .from('konfigurasi')
+      .select('key, value')
+      .in('key', ['kontak_admin_whatsapp', 'kontak_admin_email'])
+      .then(({ data }) => {
+        const o = {};
+        (data || []).forEach((r) => {
+          o[r.key] = String(r.value ?? '').trim();
+        });
+        kontakCache = {
+          whatsapp: rapikanNomor(o.kontak_admin_whatsapp) || WHATSAPP_ENV,
+          email: o.kontak_admin_email || EMAIL_ENV,
+        };
+        return kontakCache;
+      })
+      .catch(() => {
+        kontakCache = { whatsapp: WHATSAPP_ENV, email: EMAIL_ENV };
+        return kontakCache;
+      });
+  }
+  return kontakJanji;
+}
+
+function useKontakAdmin(aktif) {
+  const [kontak, setKontak] = useState(kontakCache);
+  useEffect(() => {
+    if (!aktif || kontak) return undefined;
+    let batal = false;
+    muatKontak().then((k) => {
+      if (!batal) setKontak(k);
+    });
+    return () => {
+      batal = true;
+    };
+  }, [aktif, kontak]);
+  return kontak;
+}
 
 const ISI = {
   password: {
@@ -28,9 +76,13 @@ const ISI = {
 };
 
 export default function ContactAdminModal({ jenis, email, onClose }) {
+  const kontak = useKontakAdmin(Boolean(jenis));
   if (!jenis || !ISI[jenis]) return null;
   const isi = ISI[jenis];
   const pesan = isi.pesan((email || '').trim());
+  const memuat = !kontak;
+  const WHATSAPP = kontak?.whatsapp || '';
+  const EMAIL = kontak?.email || '';
   const adaKontak = Boolean(WHATSAPP || EMAIL);
 
   return (
@@ -74,7 +126,10 @@ export default function ContactAdminModal({ jenis, email, onClose }) {
               <Mail className="w-5 h-5" /> Kirim Email ke Admin
             </a>
           )}
-          {!adaKontak && (
+          {memuat && (
+            <p className="text-sm text-slate-500 bg-slate-50 rounded-xl p-3">Memuat kontak admin...</p>
+          )}
+          {!memuat && !adaKontak && (
             <p className="text-sm text-slate-500 bg-slate-50 rounded-xl p-3">
               Silakan temui atau hubungi admin Dinas Sosial secara langsung.
             </p>
