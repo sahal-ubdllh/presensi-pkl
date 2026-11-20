@@ -241,39 +241,56 @@ export async function downloadPresensiPdf(profile, rows) {
 }
 
 // ---------------- Kegiatan ----------------
-const labelKegiatan = { disetujui: "Disetujui", menunggu: "Menunggu", ditolak: "Ditolak" };
+// Kotak tanda tangan pembimbing (tanda tangan basah) di bawah tabel.
+// Jika sisa halaman tidak cukup, kotak dipindah utuh ke halaman berikutnya.
+function kotakTandaTangan(doc) {
+  const TINGGI = 52; // tempat, jabatan, ruang tanda tangan, garis nama
+  const batasBawah = 280;
+  let y = (doc.lastAutoTable?.finalY ?? 60) + 12;
+  if (y + TINGGI > batasBawah) {
+    doc.addPage();
+    y = 30;
+  }
+  const x = 210 - MARGIN - 35; // titik tengah blok, rata kanan
+  doc.setFont(FONT, "normal");
+  doc.setFontSize(UKURAN);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Majalengka, ${format(new Date(), "dd MMMM yyyy", { locale: localeId })}`, x, y, { align: "center" });
+  doc.text("Pembimbing Lapangan,", x, y + 6, { align: "center" });
+  // ruang kosong 28 mm untuk tanda tangan basah
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(0, 0, 0);
+  doc.line(x - 35, y + 42, x + 35, y + 42);
+  doc.text("Nama / NIP", x, y + 47, { align: "center" });
+}
 
 export async function buildKegiatanPdf(profile, rows) {
   const { doc, autoTable, logo } = await newDoc();
-  const hitung = (s) => rows.filter((r) => r.status === s).length;
+  const adaJudul = rows.some((r) => clean(r.judul));
   const startY = header(
     doc,
     logo,
     "Riwayat Kegiatan",
     profile,
-    `Total ${rows.length} kegiatan; disetujui ${hitung("disetujui")}; menunggu ${hitung("menunggu")}; ditolak ${hitung("ditolak")}.`,
+    `Total ${rows.length} kegiatan.`,
   );
 
   autoTable(doc, {
     ...gayaTabel,
     startY,
-    head: [["No", "Tanggal", "Judul", "Uraian Kegiatan", "Status"]],
+    head: [adaJudul ? ["No", "Tanggal", "Judul", "Uraian Kegiatan"] : ["No", "Tanggal", "Uraian Kegiatan"]],
     body: rows.map((r, i) => [
       i + 1,
       tgl(r.tanggal || r.created_at),
-      clean(r.judul) || "-",
+      ...(adaJudul ? [clean(r.judul) || "-"] : []),
       clean(r.uraian) || "-",
-      labelKegiatan[r.status] || clean(r.status) || "-",
     ]),
     styles: { ...gayaTabel.styles, valign: "top" },
-    columnStyles: {
-      0: { cellWidth: 10, halign: "center" },
-      1: { cellWidth: 27 },
-      2: { cellWidth: 36 },
-      3: { cellWidth: "auto" },
-      4: { cellWidth: 26, halign: "center" },
-    },
+    columnStyles: adaJudul
+      ? { 0: { cellWidth: 10, halign: "center" }, 1: { cellWidth: 27 }, 2: { cellWidth: 40 }, 3: { cellWidth: "auto" } }
+      : { 0: { cellWidth: 10, halign: "center" }, 1: { cellWidth: 27 }, 2: { cellWidth: "auto" } },
   });
+  kotakTandaTangan(doc);
   footer(doc);
   return doc;
 }

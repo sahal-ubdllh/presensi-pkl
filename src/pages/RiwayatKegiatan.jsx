@@ -6,14 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatDate } from "../utils/dateUtils";
 import { downloadKegiatanPdf } from "../utils/pdfExport";
 import PageShell, { RingkasanAngka } from "../components/PageShell";
-import { WARNA, gayaChip } from "../utils/tema";
 import toast from "react-hot-toast";
-
-const STATUS = {
-  disetujui: { label: "Disetujui", warna: WARNA.hijau },
-  menunggu: { label: "Menunggu", warna: WARNA.biru },
-  ditolak: { label: "Ditolak", warna: WARNA.merah },
-};
 
 export default function RiwayatKegiatan() {
   const { profile } = useAuth();
@@ -57,7 +50,8 @@ export default function RiwayatKegiatan() {
     }
   };
 
-  const hitung = (st) => kegiatan.filter((k) => k.status === st).length;
+  const bulanIni = new Date().toISOString().slice(0, 7);
+  const totalBulanIni = kegiatan.filter((k) => String(k.tanggal).startsWith(bulanIni)).length;
 
   return (
     <PageShell
@@ -66,27 +60,26 @@ export default function RiwayatKegiatan() {
         <button
           onClick={handleDownload}
           disabled={downloading || loading || kegiatan.length === 0}
-          className="flex items-center gap-1.5 rounded-full bg-primary-700 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(3,105,161,0.25)] transition hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          className="flex items-center gap-1.5 rounded-lg bg-[#14213d] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#1d2d52] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           {downloading ? "Menyiapkan..." : "Unduh PDF"}
         </button>
       }
       judul="Riwayat kegiatan"
-      deskripsi="Semua kegiatan yang sudah Anda kirim ke pembimbing."
+      deskripsi="Semua kegiatan yang sudah Anda catat. Cetak PDF-nya untuk ditandatangani pembimbing."
       samping={
         <>
           <RingkasanAngka
             memuat={loading}
             data={[
-              ["Disetujui", hitung("disetujui"), WARNA.hijau],
-              ["Menunggu", hitung("menunggu"), WARNA.biru],
-              ["Ditolak", hitung("ditolak"), WARNA.merah],
+              ["Total kegiatan", kegiatan.length],
+              ["Bulan ini", totalBulanIni],
             ]}
           />
           <button
             onClick={() => navigate("/logbook")}
-            className="mt-6 hidden items-center gap-1.5 text-sm font-semibold text-[#0369a1] hover:underline lg:inline-flex"
+            className="mt-6 hidden items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline lg:inline-flex"
           >
             <Plus className="h-4 w-4" />
             Buat kegiatan baru
@@ -96,44 +89,36 @@ export default function RiwayatKegiatan() {
       lebar="lg:max-w-lg"
     >
       {loading ? (
-        <div className="flex justify-center rounded-2xl border border-primary-100 bg-white py-14 shadow-kartu">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0369a1] border-t-transparent" />
+        <div className="flex justify-center rounded-xl border border-[#14213d]/10 bg-white py-14">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2b4c7e] border-t-transparent" />
         </div>
       ) : kegiatan.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-primary-200 bg-primary-50/60 px-6 py-12 text-center">
-          <p className="text-[15px] text-[#0c2d48]/70">Belum ada riwayat kegiatan.</p>
+        <div className="rounded-xl border border-[#14213d]/10 bg-white px-6 py-12 text-center">
+          <p className="text-[15px] text-[#14213d]/70">Belum ada riwayat kegiatan.</p>
           <button
             onClick={() => navigate("/logbook")}
-            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0369a1] hover:underline"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1d4ed8] hover:underline"
           >
             <Plus className="h-4 w-4" />
             Buat kegiatan
           </button>
         </div>
       ) : (
-        <ul className="space-y-2.5">
+        <ul className="divide-y divide-[#14213d]/10 overflow-hidden rounded-xl border border-[#14213d]/10 bg-white lg:border-[#14213d]/20">
           {kegiatan.map((item) => {
-            const st = STATUS[item.status] || { label: item.status, warna: WARNA.tinta };
             return (
               <li key={item.id}>
                 <button
                   onClick={() => navigate(`/kegiatan/${item.id}`)}
-                  style={{ borderLeftColor: st.warna }}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-l-4 border-primary-100 bg-white px-4 py-4 text-left shadow-kartu transition hover:-translate-y-0.5 hover:border-primary-200 active:scale-[0.99] sm:px-5"
+                  className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[#f3efe6] sm:px-5"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-mono text-xs font-medium text-primary-700">{formatDate(item.tanggal)}</p>
-                      <span
-                        className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                        style={gayaChip(st.warna)}
-                      >
-                        {st.label}
-                      </span>
+                      <p className="font-mono text-xs text-[#2b4c7e]">{formatDate(item.tanggal)}</p>
                     </div>
                     <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed">{item.uraian}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-primary-400" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#14213d]/40" />
                 </button>
               </li>
             );

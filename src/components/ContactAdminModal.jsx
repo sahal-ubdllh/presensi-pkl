@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 import { X, MessageCircle, Mail } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 
-// Kontak admin dibaca dari tabel `konfigurasi` di Supabase (baris
-// kontak_admin_whatsapp dan kontak_admin_email), jadi bisa diganti lewat Table
-// Editor tanpa mengubah kode atau deploy ulang.
-// Cadangan bila tabel kosong / gagal dibaca: variabel .env (opsional)
-//   VITE_ADMIN_WHATSAPP=6281234567890     (boleh diawali 0 atau 62)
-//   VITE_ADMIN_EMAIL=admin@contoh.go.id
+
 const rapikanNomor = (v = '') => {
   const angka = String(v).replace(/\D/g, '');
   return angka.startsWith('0') ? '62' + angka.slice(1) : angka;
@@ -119,12 +115,33 @@ export default function ContactAdminModal({ jenis, email, onClose }) {
             </a>
           )}
           {EMAIL && (
-            <a
-              href={`mailto:${EMAIL}?subject=${encodeURIComponent(isi.subjek)}&body=${encodeURIComponent(pesan)}`}
-              className="flex items-center justify-center gap-2 w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-200"
-            >
-              <Mail className="w-5 h-5" /> Kirim Email ke Admin
-            </a>
+            <>
+              <a
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(EMAIL)}&su=${encodeURIComponent(isi.subjek)}&body=${encodeURIComponent(pesan)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-200"
+              >
+                <Mail className="w-5 h-5" /> Kirim Email ke Admin (Gmail)
+              </a>
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                <span className="min-w-0 truncate">{EMAIL}</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(EMAIL);
+                      toast.success('Alamat email disalin');
+                    } catch {
+                      toast.error('Gagal menyalin. Salin alamat secara manual.');
+                    }
+                  }}
+                  className="shrink-0 font-semibold text-primary-700 hover:underline"
+                >
+                  Salin
+                </button>
+              </div>
+            </>
           )}
           {memuat && (
             <p className="text-sm text-slate-500 bg-slate-50 rounded-xl p-3">Memuat kontak admin...</p>

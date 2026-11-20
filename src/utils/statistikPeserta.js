@@ -63,7 +63,7 @@ export function hitungStatistik({ peserta, presensi, kegiatan, year, month, toda
         izin: new Set(),
         sakit: new Set(),
         terakhir: null,
-        kegiatan: { total: 0, disetujui: 0, menunggu: 0, ditolak: 0 },
+        kegiatan: { total: 0 },
       },
     ]),
   );
@@ -85,7 +85,6 @@ export function hitungStatistik({ peserta, presensi, kegiatan, year, month, toda
     const u = perUser.get(k.user_id);
     if (!u) continue;
     u.kegiatan.total++;
-    if (u.kegiatan[k.status] !== undefined) u.kegiatan[k.status]++;
   }
 
   const daftar = peserta.map((p) => {
@@ -122,7 +121,7 @@ export function hitungStatistik({ peserta, presensi, kegiatan, year, month, toda
       rataKehadiran: aktif.length
         ? Math.round(aktif.reduce((a, p) => a + p.persen, 0) / aktif.length)
         : 0,
-      kegiatanMenunggu: daftar.reduce((a, p) => a + p.kegiatan.menunggu, 0),
+      kegiatanTotal: daftar.reduce((a, p) => a + p.kegiatan.total, 0),
     },
   };
 }
